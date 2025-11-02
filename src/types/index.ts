@@ -34,3 +34,14 @@ export type Vehicle = {
   notes?: string;
   created_at: string;
 };
+
+export type Employee = {
+  id: string;
+  first_name: string;
+  last_name: string;
+  position: string;
+  email: string;
+  phone: string;
+  hourly_rate: number;
+  created_at: string;
+};

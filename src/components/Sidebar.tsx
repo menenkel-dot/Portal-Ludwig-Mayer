@@ -10,12 +10,14 @@ import {
   FileText,
   Settings,
   LogOut,
-  LayoutDashboard
+  LayoutDashboard,
+  Contact
 } from "lucide-react";
 
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/customers", icon: Users, label: "Kunden" },
+  { href: "/employees", icon: Contact, label: "Mitarbeiter" },
   { href: "/sites", icon: Building, label: "Baustellen" },
   { href: "/fleet", icon: Truck, label: "Fuhrpark" },
   { href: "/calculations", icon: Calculator, label: "Kalkulation" },
