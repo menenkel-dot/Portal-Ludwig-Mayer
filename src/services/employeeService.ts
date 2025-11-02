@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { Employee } from '@/types';
 
-export type NewEmployee = Omit<Employee, 'id' | 'created_at'>;
+export type NewEmployee = Omit<Employee, 'id' | 'created_at' | 'time_entries'>;
 
 export const getEmployees = async (): Promise<Employee[]> => {
   const { data, error } = await supabase
@@ -15,6 +15,24 @@ export const getEmployees = async (): Promise<Employee[]> => {
   }
   return data || [];
 };
+
+export const getEmployeeById = async (id: string): Promise<Employee | null> => {
+    const { data, error } = await supabase
+    .from('employees')
+    .select('*, time_entries(*, sites(id, name))')
+    .eq('id', id)
+    .single();
+
+  if (error) {
+    console.error('Error fetching employee by id:', error);
+    throw new Error(error.message);
+  }
+  // Sort time entries by date descending
+  if (data && data.time_entries) {
+    data.time_entries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }
+  return data;
+}
 
 export const createEmployee = async (employeeData: NewEmployee) => {
   const { data, error } = await supabase

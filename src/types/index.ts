@@ -51,6 +51,7 @@ export type Employee = {
   phone: string;
   hourly_rate: number;
   created_at: string;
+  time_entries?: (TimeEntry & { sites: { id: string; name: string } | null })[];
 };
 
 export type TimeEntry = {

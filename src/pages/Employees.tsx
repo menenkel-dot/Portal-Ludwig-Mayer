@@ -12,6 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { MoreHorizontal, PlusCircle, Search, ArrowUpDown } from "lucide-react";
 import { EmployeeForm } from "@/components/EmployeeForm";
 import { showSuccess, showError } from "@/utils/toast";
+import { Link } from "react-router-dom";
 
 type SortConfig = {
   key: keyof Employee;
@@ -201,7 +202,11 @@ const Employees = () => {
             {currentEmployees.length > 0 ? (
               currentEmployees.map((employee) => (
                 <TableRow key={employee.id}>
-                  <TableCell className="font-medium">{employee.last_name}, {employee.first_name}</TableCell>
+                  <TableCell className="font-medium">
+                    <Link to={`/employees/${employee.id}`} className="hover:underline">
+                      {employee.last_name}, {employee.first_name}
+                    </Link>
+                  </TableCell>
                   <TableCell>{employee.position}</TableCell>
                   <TableCell>{employee.email}</TableCell>
                   <TableCell>{employee.hourly_rate.toFixed(2)} €</TableCell>

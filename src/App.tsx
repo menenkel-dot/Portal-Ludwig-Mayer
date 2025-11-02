@@ -13,6 +13,7 @@ import Sites from "./pages/Sites";
 import SiteDetail from "./pages/SiteDetail";
 import Fleet from "./pages/Fleet";
 import Employees from "./pages/Employees";
+import EmployeeDetail from "./pages/EmployeeDetail";
 import TimeTracking from "./pages/TimeTracking";
 import Reports from "./pages/Reports";
 import Calculations from "./pages/Calculations";
@@ -43,6 +44,7 @@ const App = () => (
                 <Route path="/customers" element={<Customers />} />
                 <Route path="/customers/:id" element={<CustomerDetail />} />
                 <Route path="/employees" element={<Employees />} />
+                <Route path="/employees/:id" element={<EmployeeDetail />} />
                 <Route path="/sites" element={<Sites />} />
                 <Route path="/sites/:id" element={<SiteDetail />} />
                 <Route path="/fleet" element={<Fleet />} />
