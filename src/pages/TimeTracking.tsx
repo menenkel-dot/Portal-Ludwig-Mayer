@@ -7,6 +7,7 @@ import { TimeEntry } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -19,6 +20,8 @@ type SortConfig = {
   direction: 'ascending' | 'descending';
 } | null;
 
+const ITEMS_PER_PAGE = 10;
+
 const TimeTracking = () => {
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -26,6 +29,7 @@ const TimeTracking = () => {
   const [selectedEntry, setSelectedEntry] = useState<TimeEntry | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'date', direction: 'descending' });
+  const [currentPage, setCurrentPage] = useState(1);
 
   const { data: timeEntries, isLoading: isLoadingEntries } = useQuery({ queryKey: ["timeEntries"], queryFn: getTimeEntries });
   const { data: employees, isLoading: isLoadingEmployees } = useQuery({ queryKey: ["employees"], queryFn: getEmployees });
@@ -72,6 +76,12 @@ const TimeTracking = () => {
     }
     return sortableItems;
   }, [filteredTimeEntries, sortConfig]);
+
+  const totalPages = Math.ceil(sortedTimeEntries.length / ITEMS_PER_PAGE);
+  const currentTimeEntries = sortedTimeEntries.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   const requestSort = (key: keyof TimeEntry) => {
     let direction: 'ascending' | 'descending' = 'ascending';
@@ -206,8 +216,8 @@ const TimeTracking = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sortedTimeEntries.length > 0 ? (
-              sortedTimeEntries.map((entry) => (
+            {currentTimeEntries.length > 0 ? (
+              currentTimeEntries.map((entry) => (
                 <TableRow key={entry.id}>
                   <TableCell>{new Date(entry.date).toLocaleDateString()}</TableCell>
                   <TableCell>{entry.employees?.first_name} {entry.employees?.last_name}</TableCell>
@@ -235,6 +245,30 @@ const TimeTracking = () => {
             )}
           </TableBody>
         </Table>
+      </div>
+
+      <div className="flex items-center justify-between mt-4">
+        <div className="text-sm text-muted-foreground">
+          Seite {currentPage} von {totalPages}
+        </div>
+        <Pagination>
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious
+                href="#"
+                onClick={(e) => { e.preventDefault(); setCurrentPage(p => Math.max(p - 1, 1)); }}
+                className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+              />
+            </PaginationItem>
+            <PaginationItem>
+              <PaginationNext
+                href="#"
+                onClick={(e) => { e.preventDefault(); setCurrentPage(p => Math.min(p + 1, totalPages)); }}
+                className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
       </div>
 
       <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
