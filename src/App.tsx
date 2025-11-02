@@ -11,6 +11,7 @@ import Customers from "./pages/Customers";
 import Sites from "./pages/Sites";
 import Fleet from "./pages/Fleet";
 import Employees from "./pages/Employees";
+import TimeTracking from "./pages/TimeTracking";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
@@ -34,6 +35,7 @@ const App = () => (
               <Route path="/employees" element={<Employees />} />
               <Route path="/sites" element={<Sites />} />
               <Route path="/fleet" element={<Fleet />} />
+              <Route path="/time-tracking" element={<TimeTracking />} />
               {/* Hier werden wir später weitere geschützte Routen hinzufügen */}
             </Route>
 

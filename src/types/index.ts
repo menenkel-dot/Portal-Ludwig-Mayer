@@ -45,3 +45,15 @@ export type Employee = {
   hourly_rate: number;
   created_at: string;
 };
+
+export type TimeEntry = {
+  id: string;
+  employee_id: string;
+  site_id: string;
+  date: string;
+  hours_worked: number;
+  description?: string;
+  created_at: string;
+  employees: { first_name: string; last_name: string } | null;
+  sites: { name: string } | null;
+};
