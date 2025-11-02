@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Building, User, Mail, Phone, Calendar as CalendarIcon } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
+import { SiteTimeEntries } from "@/components/SiteTimeEntries";
 
 const SiteDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -113,6 +114,10 @@ const SiteDetail = () => {
             </CardContent>
           </Card>
         )}
+      </div>
+
+      <div className="mt-6">
+        <SiteTimeEntries siteId={site.id} />
       </div>
     </div>
   );

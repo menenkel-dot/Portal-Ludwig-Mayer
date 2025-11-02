@@ -16,6 +16,20 @@ export const getTimeEntries = async (): Promise<TimeEntry[]> => {
   return data || [];
 };
 
+export const getTimeEntriesForSite = async (siteId: string): Promise<TimeEntry[]> => {
+  const { data, error } = await supabase
+    .from('time_entries')
+    .select('*, employees(first_name, last_name)')
+    .eq('site_id', siteId)
+    .order('date', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching time entries for site:', error);
+    throw new Error(error.message);
+  }
+  return data || [];
+};
+
 export const createTimeEntry = async (entryData: NewTimeEntry) => {
   const { data, error } = await supabase
     .from('time_entries')
