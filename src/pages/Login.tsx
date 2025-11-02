@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { showError } from '@/utils/toast';
-import logo from '../assets/logo.png';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -33,7 +32,7 @@ const Login = () => {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100">
       <div className="mb-8">
-        <img src={logo} alt="Logo" className="h-16" />
+        <img src="/logo.png" alt="Logo" className="h-16" />
       </div>
       <Card className="w-full max-w-sm">
         <CardHeader>
