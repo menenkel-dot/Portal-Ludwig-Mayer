@@ -1,14 +1,15 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getCalculations, createCalculation, updateCalculation, deleteCalculation, NewCalculation } from "@/services/calculationService";
 import { getSites } from "@/services/siteService";
 import { Calculation } from "@/types";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, PlusCircle } from "lucide-react";
+import { MoreHorizontal, PlusCircle, Search } from "lucide-react";
 import { CalculationForm } from "@/components/CalculationForm";
 import { showSuccess, showError } from "@/utils/toast";
 import { Link } from "react-router-dom";
@@ -18,9 +19,19 @@ const Calculations = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [selectedCalc, setSelectedCalc] = useState<Calculation | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const { data: calculations, isLoading: isLoadingCalcs } = useQuery({ queryKey: ["calculations"], queryFn: getCalculations });
   const { data: sites, isLoading: isLoadingSites } = useQuery({ queryKey: ["sites"], queryFn: getSites });
+
+  const filteredCalculations = useMemo(() => {
+    if (!calculations) return [];
+    const lowercasedTerm = searchTerm.toLowerCase();
+    return calculations.filter(calc =>
+      calc.name.toLowerCase().includes(lowercasedTerm) ||
+      (calc.sites?.name && calc.sites.name.toLowerCase().includes(lowercasedTerm))
+    );
+  }, [calculations, searchTerm]);
 
   const mutationOptions = {
     onSuccess: () => {
@@ -84,27 +95,38 @@ const Calculations = () => {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Kalkulationen</h1>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => openDialog()}>
-              <PlusCircle className="mr-2 h-4 w-4" /> Neue Kalkulation
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{selectedCalc ? "Kalkulation bearbeiten" : "Neue Kalkulation anlegen"}</DialogTitle>
-            </DialogHeader>
-            {sites && (
-              <CalculationForm
-                onSubmit={handleFormSubmit}
-                initialData={selectedCalc}
-                sites={sites}
-                onCancel={() => setIsDialogOpen(false)}
-                isLoading={createMutation.isPending || updateMutation.isPending}
-              />
-            )}
-          </DialogContent>
-        </Dialog>
+        <div className="flex items-center space-x-2">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Kalkulationen suchen..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-8 w-64"
+            />
+          </div>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => openDialog()}>
+                <PlusCircle className="mr-2 h-4 w-4" /> Neue Kalkulation
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{selectedCalc ? "Kalkulation bearbeiten" : "Neue Kalkulation anlegen"}</DialogTitle>
+              </DialogHeader>
+              {sites && (
+                <CalculationForm
+                  onSubmit={handleFormSubmit}
+                  initialData={selectedCalc}
+                  sites={sites}
+                  onCancel={() => setIsDialogOpen(false)}
+                  isLoading={createMutation.isPending || updateMutation.isPending}
+                />
+              )}
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <div className="bg-white rounded-lg shadow">
@@ -118,27 +140,35 @@ const Calculations = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {calculations?.map((calc) => (
-              <TableRow key={calc.id}>
-                <TableCell className="font-medium">{calc.name}</TableCell>
-                <TableCell>{calc.sites?.name || "N/A"}</TableCell>
-                <TableCell>{new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(calc.total_amount)}</TableCell>
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0"><MoreHorizontal className="h-4 w-4" /></Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem asChild>
-                        <Link to={`/calculations/${calc.id}`}>Details anzeigen</Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => openDialog(calc)}>Bearbeiten</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => openDeleteConfirm(calc)} className="text-red-600">Löschen</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+            {filteredCalculations.length > 0 ? (
+              filteredCalculations.map((calc) => (
+                <TableRow key={calc.id}>
+                  <TableCell className="font-medium">{calc.name}</TableCell>
+                  <TableCell>{calc.sites?.name || "N/A"}</TableCell>
+                  <TableCell>{new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(calc.total_amount)}</TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0"><MoreHorizontal className="h-4 w-4" /></Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem asChild>
+                          <Link to={`/calculations/${calc.id}`}>Details anzeigen</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => openDialog(calc)}>Bearbeiten</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => openDeleteConfirm(calc)} className="text-red-600">Löschen</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={4} className="h-24 text-center">
+                  Keine Ergebnisse gefunden.
                 </TableCell>
               </TableRow>
-            ))}
+            )}
           </TableBody>
         </Table>
       </div>
