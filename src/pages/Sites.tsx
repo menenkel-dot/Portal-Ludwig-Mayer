@@ -36,11 +36,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, PlusCircle, Search } from "lucide-react";
+import { MoreHorizontal, PlusCircle, Search, ArrowUpDown } from "lucide-react";
 import { SiteForm } from "@/components/SiteForm";
 import { showSuccess, showError } from "@/utils/toast";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
+
+type SortConfig = {
+  key: keyof Site;
+  direction: 'ascending' | 'descending';
+} | null;
 
 const Sites = () => {
   const queryClient = useQueryClient();
@@ -48,6 +53,7 @@ const Sites = () => {
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [selectedSite, setSelectedSite] = useState<Site | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [sortConfig, setSortConfig] = useState<SortConfig>(null);
 
   const { data: sites, isLoading: isLoadingSites } = useQuery({
     queryKey: ["sites"],
@@ -68,6 +74,39 @@ const Sites = () => {
       site.address.toLowerCase().includes(lowercasedTerm)
     );
   }, [sites, searchTerm]);
+
+  const sortedSites = useMemo(() => {
+    let sortableItems = [...filteredSites];
+    if (sortConfig !== null) {
+      sortableItems.sort((a, b) => {
+        let valA, valB;
+        if (sortConfig.key === 'customers') {
+          valA = a.customers?.name || '';
+          valB = b.customers?.name || '';
+        } else {
+          valA = a[sortConfig.key];
+          valB = b[sortConfig.key];
+        }
+        
+        if (valA < valB) {
+          return sortConfig.direction === 'ascending' ? -1 : 1;
+        }
+        if (valA > valB) {
+          return sortConfig.direction === 'ascending' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    return sortableItems;
+  }, [filteredSites, sortConfig]);
+
+  const requestSort = (key: keyof Site) => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
 
   const mutationOptions = {
     onSuccess: () => {
@@ -176,16 +215,32 @@ const Sites = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Kunde</TableHead>
-              <TableHead>Startdatum</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => requestSort('name')}>
+                  Name <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => requestSort('customers')}>
+                  Kunde <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => requestSort('start_date')}>
+                  Startdatum <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => requestSort('status')}>
+                  Status <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
               <TableHead className="text-right">Aktionen</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredSites.length > 0 ? (
-              filteredSites.map((site) => (
+            {sortedSites.length > 0 ? (
+              sortedSites.map((site) => (
                 <TableRow key={site.id}>
                   <TableCell className="font-medium">
                     <Link to={`/sites/${site.id}`} className="hover:underline">
