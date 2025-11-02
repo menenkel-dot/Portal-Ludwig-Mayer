@@ -1,13 +1,14 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getVehicles, createVehicle, updateVehicle, deleteVehicle, NewVehicle } from "@/services/vehicleService";
 import { Vehicle } from "@/types";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, PlusCircle } from "lucide-react";
+import { MoreHorizontal, PlusCircle, Search } from "lucide-react";
 import { VehicleForm } from "@/components/VehicleForm";
 import { showSuccess, showError } from "@/utils/toast";
 import { Badge } from "@/components/ui/badge";
@@ -17,11 +18,23 @@ const Fleet = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const { data: vehicles, isLoading } = useQuery({
     queryKey: ["vehicles"],
     queryFn: getVehicles,
   });
+
+  const filteredVehicles = useMemo(() => {
+    if (!vehicles) return [];
+    const lowercasedTerm = searchTerm.toLowerCase();
+    return vehicles.filter(vehicle =>
+      vehicle.manufacturer.toLowerCase().includes(lowercasedTerm) ||
+      vehicle.model.toLowerCase().includes(lowercasedTerm) ||
+      vehicle.license_plate.toLowerCase().includes(lowercasedTerm) ||
+      vehicle.vehicle_type.toLowerCase().includes(lowercasedTerm)
+    );
+  }, [vehicles, searchTerm]);
 
   const mutationOptions = {
     onSuccess: () => {
@@ -85,24 +98,35 @@ const Fleet = () => {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Fuhrparkverwaltung</h1>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => openDialog()}>
-              <PlusCircle className="mr-2 h-4 w-4" /> Neues Fahrzeug
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[625px]">
-            <DialogHeader>
-              <DialogTitle>{selectedVehicle ? "Fahrzeug bearbeiten" : "Neues Fahrzeug anlegen"}</DialogTitle>
-            </DialogHeader>
-            <VehicleForm
-              onSubmit={handleFormSubmit}
-              initialData={selectedVehicle}
-              onCancel={() => setIsDialogOpen(false)}
-              isLoading={createMutation.isPending || updateMutation.isPending}
+        <div className="flex items-center space-x-2">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Fahrzeuge suchen..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-8 w-64"
             />
-          </DialogContent>
-        </Dialog>
+          </div>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => openDialog()}>
+                <PlusCircle className="mr-2 h-4 w-4" /> Neues Fahrzeug
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[625px]">
+              <DialogHeader>
+                <DialogTitle>{selectedVehicle ? "Fahrzeug bearbeiten" : "Neues Fahrzeug anlegen"}</DialogTitle>
+              </DialogHeader>
+              <VehicleForm
+                onSubmit={handleFormSubmit}
+                initialData={selectedVehicle}
+                onCancel={() => setIsDialogOpen(false)}
+                isLoading={createMutation.isPending || updateMutation.isPending}
+              />
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <div className="bg-white rounded-lg shadow">
@@ -118,34 +142,42 @@ const Fleet = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {vehicles?.map((vehicle) => (
-              <TableRow key={vehicle.id}>
-                <TableCell className="font-medium">{vehicle.manufacturer} {vehicle.model}</TableCell>
-                <TableCell>{vehicle.license_plate}</TableCell>
-                <TableCell>{vehicle.vehicle_type}</TableCell>
-                <TableCell>{vehicle.location}</TableCell>
-                <TableCell>
-                  <Badge variant={
-                    vehicle.status === 'Verfügbar' ? 'default' :
-                    vehicle.status === 'In Wartung' ? 'destructive' :
-                    'secondary'
-                  }>
-                    {vehicle.status}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0"><MoreHorizontal className="h-4 w-4" /></Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => openDialog(vehicle)}>Bearbeiten</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => openDeleteConfirm(vehicle)} className="text-red-600">Löschen</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+            {filteredVehicles.length > 0 ? (
+              filteredVehicles.map((vehicle) => (
+                <TableRow key={vehicle.id}>
+                  <TableCell className="font-medium">{vehicle.manufacturer} {vehicle.model}</TableCell>
+                  <TableCell>{vehicle.license_plate}</TableCell>
+                  <TableCell>{vehicle.vehicle_type}</TableCell>
+                  <TableCell>{vehicle.location}</TableCell>
+                  <TableCell>
+                    <Badge variant={
+                      vehicle.status === 'Verfügbar' ? 'default' :
+                      vehicle.status === 'In Wartung' ? 'destructive' :
+                      'secondary'
+                    }>
+                      {vehicle.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0"><MoreHorizontal className="h-4 w-4" /></Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => openDialog(vehicle)}>Bearbeiten</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => openDeleteConfirm(vehicle)} className="text-red-600">Löschen</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={6} className="h-24 text-center">
+                  Keine Ergebnisse gefunden.
                 </TableCell>
               </TableRow>
-            ))}
+            )}
           </TableBody>
         </Table>
       </div>
