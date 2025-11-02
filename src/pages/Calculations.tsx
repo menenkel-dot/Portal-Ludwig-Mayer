@@ -9,10 +9,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, PlusCircle, Search } from "lucide-react";
+import { MoreHorizontal, PlusCircle, Search, ArrowUpDown } from "lucide-react";
 import { CalculationForm } from "@/components/CalculationForm";
 import { showSuccess, showError } from "@/utils/toast";
 import { Link } from "react-router-dom";
+
+type SortConfig = {
+  key: keyof Calculation | 'site_name';
+  direction: 'ascending' | 'descending';
+} | null;
 
 const Calculations = () => {
   const queryClient = useQueryClient();
@@ -20,6 +25,7 @@ const Calculations = () => {
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [selectedCalc, setSelectedCalc] = useState<Calculation | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [sortConfig, setSortConfig] = useState<SortConfig>(null);
 
   const { data: calculations, isLoading: isLoadingCalcs } = useQuery({ queryKey: ["calculations"], queryFn: getCalculations });
   const { data: sites, isLoading: isLoadingSites } = useQuery({ queryKey: ["sites"], queryFn: getSites });
@@ -32,6 +38,39 @@ const Calculations = () => {
       (calc.sites?.name && calc.sites.name.toLowerCase().includes(lowercasedTerm))
     );
   }, [calculations, searchTerm]);
+
+  const sortedCalculations = useMemo(() => {
+    let sortableItems = [...filteredCalculations];
+    if (sortConfig !== null) {
+      sortableItems.sort((a, b) => {
+        let valA, valB;
+        if (sortConfig.key === 'site_name') {
+          valA = a.sites?.name || '';
+          valB = b.sites?.name || '';
+        } else {
+          valA = a[sortConfig.key as keyof Calculation];
+          valB = b[sortConfig.key as keyof Calculation];
+        }
+        
+        if (valA < valB) {
+          return sortConfig.direction === 'ascending' ? -1 : 1;
+        }
+        if (valA > valB) {
+          return sortConfig.direction === 'ascending' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    return sortableItems;
+  }, [filteredCalculations, sortConfig]);
+
+  const requestSort = (key: keyof Calculation | 'site_name') => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
 
   const mutationOptions = {
     onSuccess: () => {
@@ -133,15 +172,27 @@ const Calculations = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Baustelle</TableHead>
-              <TableHead>Gesamtsumme</TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => requestSort('name')}>
+                  Name <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => requestSort('site_name')}>
+                  Baustelle <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => requestSort('total_amount')}>
+                  Gesamtsumme <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
               <TableHead className="text-right">Aktionen</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredCalculations.length > 0 ? (
-              filteredCalculations.map((calc) => (
+            {sortedCalculations.length > 0 ? (
+              sortedCalculations.map((calc) => (
                 <TableRow key={calc.id}>
                   <TableCell className="font-medium">{calc.name}</TableCell>
                   <TableCell>{calc.sites?.name || "N/A"}</TableCell>
