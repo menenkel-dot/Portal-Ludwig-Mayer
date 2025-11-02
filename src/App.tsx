@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
+import Customers from "./pages/Customers";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
@@ -26,6 +27,7 @@ const App = () => (
             
             <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/customers" element={<Customers />} />
               {/* Hier werden wir später weitere geschützte Routen hinzufügen */}
             </Route>
 
