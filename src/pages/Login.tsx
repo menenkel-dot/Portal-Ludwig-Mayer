@@ -30,7 +30,10 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100">
+      <div className="mb-8">
+        <img src="/logo.png" alt="Logo" className="h-16" />
+      </div>
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle className="text-2xl">Anmelden</CardTitle>

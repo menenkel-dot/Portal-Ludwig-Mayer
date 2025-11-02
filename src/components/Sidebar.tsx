@@ -54,7 +54,7 @@ const Sidebar = () => {
   return (
     <aside className="w-64 bg-white dark:bg-gray-800 flex flex-col border-r">
       <div className="p-4 border-b">
-        <h1 className="text-2xl font-bold text-blue-600">Bau-Portal</h1>
+        <img src="/logo.png" alt="Logo" className="h-12" />
       </div>
       <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
         {visibleNavItems.map((item) => (
