@@ -67,3 +67,14 @@ export type Calculation = {
   created_at: string;
   sites: { name: string } | null;
 };
+
+export type CalculationItem = {
+  id: string;
+  calculation_id: string;
+  description: string;
+  quantity: number;
+  unit: string | null;
+  unit_price: number;
+  total_price: number;
+  created_at: string;
+};

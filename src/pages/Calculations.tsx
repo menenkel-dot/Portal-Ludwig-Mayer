@@ -11,6 +11,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { MoreHorizontal, PlusCircle } from "lucide-react";
 import { CalculationForm } from "@/components/CalculationForm";
 import { showSuccess, showError } from "@/utils/toast";
+import { Link } from "react-router-dom";
 
 const Calculations = () => {
   const queryClient = useQueryClient();
@@ -128,7 +129,9 @@ const Calculations = () => {
                       <Button variant="ghost" className="h-8 w-8 p-0"><MoreHorizontal className="h-4 w-4" /></Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem>Details anzeigen</DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to={`/calculations/${calc.id}`}>Details anzeigen</Link>
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => openDialog(calc)}>Bearbeiten</DropdownMenuItem>
                       <DropdownMenuItem onClick={() => openDeleteConfirm(calc)} className="text-red-600">Löschen</DropdownMenuItem>
                     </DropdownMenuContent>
