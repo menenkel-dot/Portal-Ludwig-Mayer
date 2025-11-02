@@ -13,12 +13,31 @@ import { de } from "date-fns/locale";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Dashboard = () => {
-  const { data: sites, isLoading: isLoadingSites } = useQuery({ queryKey: ["sites"], queryFn: getSites });
-  const { data: vehicles, isLoading: isLoadingVehicles } = useQuery({ queryKey: ["vehicles"], queryFn: getVehicles });
-  const { data: timeEntries, isLoading: isLoadingTimeEntries } = useQuery({ queryKey: ["timeEntries"], queryFn: getTimeEntries });
-  const { data: employees, isLoading: isLoadingEmployees } = useQuery({ queryKey: ["employees"], queryFn: getEmployees });
+  const { permissions, isAdmin } = useAuth();
+
+  const { data: sites, isLoading: isLoadingSites } = useQuery({ 
+    queryKey: ["sites"], 
+    queryFn: getSites,
+    enabled: isAdmin || permissions.includes('sites'),
+  });
+  const { data: vehicles, isLoading: isLoadingVehicles } = useQuery({ 
+    queryKey: ["vehicles"], 
+    queryFn: getVehicles,
+    enabled: isAdmin || permissions.includes('fleet'),
+  });
+  const { data: timeEntries, isLoading: isLoadingTimeEntries } = useQuery({ 
+    queryKey: ["timeEntries"], 
+    queryFn: getTimeEntries,
+    enabled: isAdmin || permissions.includes('time-tracking'),
+  });
+  const { data: employees, isLoading: isLoadingEmployees } = useQuery({ 
+    queryKey: ["employees"], 
+    queryFn: getEmployees,
+    enabled: isAdmin || permissions.includes('employees'),
+  });
 
   const isLoading = isLoadingSites || isLoadingVehicles || isLoadingTimeEntries || isLoadingEmployees;
 
@@ -36,13 +55,15 @@ const Dashboard = () => {
     const employeesWorkingToday = new Set(todaysEntries.map(entry => entry.employee_id)).size;
     const hoursToday = todaysEntries.reduce((sum, entry) => sum + entry.hours_worked, 0);
 
-    return [
-      { title: "Aktive Baustellen", value: activeSites, icon: Building },
-      { title: "Mitarbeiter im Einsatz (heute)", value: employeesWorkingToday, icon: UserCheck },
-      { title: "Stunden erfasst (heute)", value: `${hoursToday.toFixed(1)} h`, icon: Clock },
-      { title: "Fahrzeuge verfügbar", value: availableVehicles, icon: Truck },
+    const allStats = [
+      { title: "Aktive Baustellen", value: activeSites, icon: Building, permission: 'sites' },
+      { title: "Mitarbeiter im Einsatz (heute)", value: employeesWorkingToday, icon: UserCheck, permission: 'employees' },
+      { title: "Stunden erfasst (heute)", value: `${hoursToday.toFixed(1)} h`, icon: Clock, permission: 'time-tracking' },
+      { title: "Fahrzeuge verfügbar", value: availableVehicles, icon: Truck, permission: 'fleet' },
     ];
-  }, [sites, vehicles, timeEntries]);
+
+    return allStats.filter(stat => isAdmin || permissions.includes(stat.permission));
+  }, [sites, vehicles, timeEntries, isAdmin, permissions]);
 
   const weeklyHoursData = useMemo(() => {
     if (!timeEntries) return [];
@@ -75,6 +96,9 @@ const Dashboard = () => {
     return sites?.filter(site => site.status === "In Arbeit") || [];
   }, [sites]);
 
+  const canViewTimeTracking = isAdmin || permissions.includes('time-tracking');
+  const canViewSites = isAdmin || permissions.includes('sites');
+
   return (
     <div>
       <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
@@ -96,91 +120,97 @@ const Dashboard = () => {
 
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Weekly Hours Chart */}
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle>Stundenübersicht der letzten 7 Tage</CardTitle>
-            </CardHeader>
-            <CardContent className="pl-2 h-[300px]">
-              {isLoading ? <Skeleton className="h-full w-full" /> : (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={weeklyHoursData}>
-                    <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                    <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}h`} />
-                    <Tooltip cursor={{ fill: 'rgba(241, 245, 249, 0.5)' }} contentStyle={{ background: "white", border: "1px solid #e2e8f0", borderRadius: "0.5rem" }} />
-                    <Bar dataKey="Stunden" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              )}
-            </CardContent>
-          </Card>
+          {canViewTimeTracking && (
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle>Stundenübersicht der letzten 7 Tage</CardTitle>
+              </CardHeader>
+              <CardContent className="pl-2 h-[300px]">
+                {isLoadingTimeEntries ? <Skeleton className="h-full w-full" /> : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={weeklyHoursData}>
+                      <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                      <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}h`} />
+                      <Tooltip cursor={{ fill: 'rgba(241, 245, 249, 0.5)' }} contentStyle={{ background: "white", border: "1px solid #e2e8f0", borderRadius: "0.5rem" }} />
+                      <Bar dataKey="Stunden" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           {/* Recent Activities */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Letzte Aktivitäten</CardTitle>
-              <CardDescription>Die zuletzt erfassten Zeiteinträge.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? <Skeleton className="h-[300px] w-full" /> : (
-                <div className="space-y-4">
-                  {recentActivities.map(activity => (
-                    <div key={activity.id} className="flex items-center">
-                      <Avatar className="h-9 w-9">
-                        <AvatarFallback>{activity.employeeName.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                      <div className="ml-4 space-y-1">
-                        <p className="text-sm font-medium leading-none">{activity.employeeName}</p>
-                        <p className="text-sm text-muted-foreground">{activity.siteName}</p>
+          {canViewTimeTracking && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Letzte Aktivitäten</CardTitle>
+                <CardDescription>Die zuletzt erfassten Zeiteinträge.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoadingTimeEntries ? <Skeleton className="h-[300px] w-full" /> : (
+                  <div className="space-y-4">
+                    {recentActivities.map(activity => (
+                      <div key={activity.id} className="flex items-center">
+                        <Avatar className="h-9 w-9">
+                          <AvatarFallback>{activity.employeeName.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <div className="ml-4 space-y-1">
+                          <p className="text-sm font-medium leading-none">{activity.employeeName}</p>
+                          <p className="text-sm text-muted-foreground">{activity.siteName}</p>
+                        </div>
+                        <div className="ml-auto font-medium">{activity.hours_worked.toFixed(1)}h</div>
                       </div>
-                      <div className="ml-auto font-medium">{activity.hours_worked.toFixed(1)}h</div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Active Projects */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Aktive Projekte</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? <Skeleton className="h-[200px] w-full" /> : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Baustelle</TableHead>
-                    <TableHead>Kunde</TableHead>
-                    <TableHead>Startdatum</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {activeProjects.map(project => (
-                    <TableRow key={project.id}>
-                      <TableCell className="font-medium">
-                        <Link to={`/sites/${project.id}`} className="hover:underline">
-                          {project.name}
-                        </Link>
-                      </TableCell>
-                      <TableCell>
-                        {project.customers ? (
-                          <Link to={`/customers/${project.customers.id}`} className="hover:underline">
-                            {project.customers.name}
-                          </Link>
-                        ) : (
-                          "N/A"
-                        )}
-                      </TableCell>
-                      <TableCell>{format(new Date(project.start_date), "dd.MM.yyyy")}</TableCell>
+        {canViewSites && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Aktive Projekte</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isLoadingSites ? <Skeleton className="h-[200px] w-full" /> : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Baustelle</TableHead>
+                      <TableHead>Kunde</TableHead>
+                      <TableHead>Startdatum</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+                  </TableHeader>
+                  <TableBody>
+                    {activeProjects.map(project => (
+                      <TableRow key={project.id}>
+                        <TableCell className="font-medium">
+                          <Link to={`/sites/${project.id}`} className="hover:underline">
+                            {project.name}
+                          </Link>
+                        </TableCell>
+                        <TableCell>
+                          {project.customers ? (
+                            <Link to={`/customers/${project.customers.id}`} className="hover:underline">
+                              {project.customers.name}
+                            </Link>
+                          ) : (
+                            "N/A"
+                          )}
+                        </TableCell>
+                        <TableCell>{format(new Date(project.start_date), "dd.MM.yyyy")}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

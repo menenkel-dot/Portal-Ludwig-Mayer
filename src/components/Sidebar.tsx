@@ -43,7 +43,12 @@ const Sidebar = () => {
   };
 
   const visibleNavItems = allNavItems.filter(item => isAdmin || permissions.includes(item.permission));
-  const visibleSettingsItems = settingsNavItems.filter(item => !item.adminOnly || isAdmin);
+  const visibleSettingsItems = settingsNavItems.filter(item => {
+    if (item.adminOnly) {
+      return isAdmin;
+    }
+    return isAdmin || permissions.includes(item.permission);
+  });
 
 
   return (
