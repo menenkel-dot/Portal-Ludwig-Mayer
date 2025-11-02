@@ -4,14 +4,14 @@ import { getSites } from "@/services/siteService";
 import { getVehicles } from "@/services/vehicleService";
 import { getTimeEntries } from "@/services/timeTrackingService";
 import { getEmployees } from "@/services/employeeService";
-import { Building, Users, Truck, Clock, UserCheck } from "lucide-react";
+import { Building, Truck, Clock, UserCheck } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMemo } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { format, subDays } from "date-fns";
 import { de } from "date-fns/locale";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const Dashboard = () => {
   const { data: sites, isLoading: isLoadingSites } = useQuery({ queryKey: ["sites"], queryFn: getSites });
