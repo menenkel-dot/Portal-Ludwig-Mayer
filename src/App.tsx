@@ -15,9 +15,11 @@ import TimeTracking from "./pages/TimeTracking";
 import Reports from "./pages/Reports";
 import Calculations from "./pages/Calculations";
 import CalculationDetail from "./pages/CalculationDetail";
+import Settings from "./pages/Settings";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
+import { ThemeProvider } from "./components/ThemeProvider";
 
 const queryClient = new QueryClient();
 
@@ -26,28 +28,31 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/" element={<Index />} />
-            
-            <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/customers" element={<Customers />} />
-              <Route path="/employees" element={<Employees />} />
-              <Route path="/sites" element={<Sites />} />
-              <Route path="/fleet" element={<Fleet />} />
-              <Route path="/time-tracking" element={<TimeTracking />} />
-              <Route path="/reports" element={<Reports />} />
-              <Route path="/calculations" element={<Calculations />} />
-              <Route path="/calculations/:id" element={<CalculationDetail />} />
-            </Route>
+      <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
+        <BrowserRouter>
+          <AuthProvider>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/" element={<Index />} />
+              
+              <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/customers" element={<Customers />} />
+                <Route path="/employees" element={<Employees />} />
+                <Route path="/sites" element={<Sites />} />
+                <Route path="/fleet" element={<Fleet />} />
+                <Route path="/time-tracking" element={<TimeTracking />} />
+                <Route path="/reports" element={<Reports />} />
+                <Route path="/calculations" element={<Calculations />} />
+                <Route path="/calculations/:id" element={<CalculationDetail />} />
+                <Route path="/settings" element={<Settings />} />
+              </Route>
 
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </AuthProvider>
-      </BrowserRouter>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AuthProvider>
+        </BrowserRouter>
+      </ThemeProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
