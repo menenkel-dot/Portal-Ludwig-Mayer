@@ -1,15 +1,16 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getTimeEntries, createTimeEntry, updateTimeEntry, deleteTimeEntry, NewTimeEntry } from "@/services/timeTrackingService";
 import { getEmployees } from "@/services/employeeService";
 import { getSites } from "@/services/siteService";
 import { TimeEntry } from "@/types";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, PlusCircle } from "lucide-react";
+import { MoreHorizontal, PlusCircle, Search } from "lucide-react";
 import { TimeEntryForm } from "@/components/TimeEntryForm";
 import { showSuccess, showError } from "@/utils/toast";
 
@@ -18,10 +19,25 @@ const TimeTracking = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<TimeEntry | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const { data: timeEntries, isLoading: isLoadingEntries } = useQuery({ queryKey: ["timeEntries"], queryFn: getTimeEntries });
   const { data: employees, isLoading: isLoadingEmployees } = useQuery({ queryKey: ["employees"], queryFn: getEmployees });
   const { data: sites, isLoading: isLoadingSites } = useQuery({ queryKey: ["sites"], queryFn: getSites });
+
+  const filteredTimeEntries = useMemo(() => {
+    if (!timeEntries) return [];
+    const lowercasedTerm = searchTerm.toLowerCase();
+    return timeEntries.filter(entry => {
+      const employeeName = `${entry.employees?.first_name || ''} ${entry.employees?.last_name || ''}`.toLowerCase();
+      const siteName = (entry.sites?.name || '').toLowerCase();
+      const date = new Date(entry.date).toLocaleDateString().toLowerCase();
+
+      return employeeName.includes(lowercasedTerm) ||
+             siteName.includes(lowercasedTerm) ||
+             date.includes(lowercasedTerm);
+    });
+  }, [timeEntries, searchTerm]);
 
   const mutationOptions = {
     onSuccess: () => {
@@ -85,28 +101,39 @@ const TimeTracking = () => {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Zeiterfassung</h1>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => openDialog()}>
-              <PlusCircle className="mr-2 h-4 w-4" /> Neuer Eintrag
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[625px]">
-            <DialogHeader>
-              <DialogTitle>{selectedEntry ? "Eintrag bearbeiten" : "Neuen Zeiteintrag erstellen"}</DialogTitle>
-            </DialogHeader>
-            {employees && sites && (
-              <TimeEntryForm
-                onSubmit={handleFormSubmit}
-                initialData={selectedEntry}
-                employees={employees}
-                sites={sites}
-                onCancel={() => setIsDialogOpen(false)}
-                isLoading={createMutation.isPending || updateMutation.isPending}
-              />
-            )}
-          </DialogContent>
-        </Dialog>
+        <div className="flex items-center space-x-2">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Einträge suchen..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-8 w-64"
+            />
+          </div>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => openDialog()}>
+                <PlusCircle className="mr-2 h-4 w-4" /> Neuer Eintrag
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[625px]">
+              <DialogHeader>
+                <DialogTitle>{selectedEntry ? "Eintrag bearbeiten" : "Neuen Zeiteintrag erstellen"}</DialogTitle>
+              </DialogHeader>
+              {employees && sites && (
+                <TimeEntryForm
+                  onSubmit={handleFormSubmit}
+                  initialData={selectedEntry}
+                  employees={employees}
+                  sites={sites}
+                  onCancel={() => setIsDialogOpen(false)}
+                  isLoading={createMutation.isPending || updateMutation.isPending}
+                />
+              )}
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <div className="bg-white rounded-lg shadow">
@@ -121,25 +148,33 @@ const TimeTracking = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {timeEntries?.map((entry) => (
-              <TableRow key={entry.id}>
-                <TableCell>{new Date(entry.date).toLocaleDateString()}</TableCell>
-                <TableCell>{entry.employees?.first_name} {entry.employees?.last_name}</TableCell>
-                <TableCell>{entry.sites?.name}</TableCell>
-                <TableCell>{entry.hours_worked.toFixed(2)}</TableCell>
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0"><MoreHorizontal className="h-4 w-4" /></Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => openDialog(entry)}>Bearbeiten</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => openDeleteConfirm(entry)} className="text-red-600">Löschen</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+            {filteredTimeEntries.length > 0 ? (
+              filteredTimeEntries.map((entry) => (
+                <TableRow key={entry.id}>
+                  <TableCell>{new Date(entry.date).toLocaleDateString()}</TableCell>
+                  <TableCell>{entry.employees?.first_name} {entry.employees?.last_name}</TableCell>
+                  <TableCell>{entry.sites?.name}</TableCell>
+                  <TableCell>{entry.hours_worked.toFixed(2)}</TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0"><MoreHorizontal className="h-4 w-4" /></Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => openDialog(entry)}>Bearbeiten</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => openDeleteConfirm(entry)} className="text-red-600">Löschen</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={5} className="h-24 text-center">
+                  Keine Ergebnisse gefunden.
                 </TableCell>
               </TableRow>
-            ))}
+            )}
           </TableBody>
         </Table>
       </div>
