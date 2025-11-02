@@ -8,9 +8,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, PlusCircle, Search } from "lucide-react";
+import { MoreHorizontal, PlusCircle, Search, ArrowUpDown } from "lucide-react";
 import { MaterialForm } from "@/components/MaterialForm";
 import { showSuccess, showError } from "@/utils/toast";
+
+type SortConfig = {
+  key: keyof Material;
+  direction: 'ascending' | 'descending';
+} | null;
 
 const Materials = () => {
   const queryClient = useQueryClient();
@@ -18,6 +23,7 @@ const Materials = () => {
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [sortConfig, setSortConfig] = useState<SortConfig>(null);
 
   const { data: materials, isLoading } = useQuery({
     queryKey: ["materials"],
@@ -32,6 +38,34 @@ const Materials = () => {
       (material.supplier && material.supplier.toLowerCase().includes(lowercasedTerm))
     );
   }, [materials, searchTerm]);
+
+  const sortedMaterials = useMemo(() => {
+    let sortableItems = [...filteredMaterials];
+    if (sortConfig !== null) {
+      sortableItems.sort((a, b) => {
+        const valA = a[sortConfig.key];
+        const valB = b[sortConfig.key];
+        if (valA === null) return 1;
+        if (valB === null) return -1;
+        if (valA < valB) {
+          return sortConfig.direction === 'ascending' ? -1 : 1;
+        }
+        if (valA > valB) {
+          return sortConfig.direction === 'ascending' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    return sortableItems;
+  }, [filteredMaterials, sortConfig]);
+
+  const requestSort = (key: keyof Material) => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
 
   const mutationOptions = {
     onSuccess: () => {
@@ -132,16 +166,32 @@ const Materials = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Lieferant</TableHead>
-              <TableHead>Einheit</TableHead>
-              <TableHead>Preis/Einheit</TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => requestSort('name')}>
+                  Name <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => requestSort('supplier')}>
+                  Lieferant <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => requestSort('unit')}>
+                  Einheit <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => requestSort('price_per_unit')}>
+                  Preis/Einheit <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
               <TableHead className="text-right">Aktionen</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredMaterials.length > 0 ? (
-              filteredMaterials.map((material) => (
+            {sortedMaterials.length > 0 ? (
+              sortedMaterials.map((material) => (
                 <TableRow key={material.id}>
                   <TableCell className="font-medium">{material.name}</TableCell>
                   <TableCell>{material.supplier || "-"}</TableCell>
