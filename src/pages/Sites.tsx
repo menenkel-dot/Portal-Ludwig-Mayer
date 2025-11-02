@@ -14,6 +14,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -47,6 +54,8 @@ type SortConfig = {
   direction: 'ascending' | 'descending';
 } | null;
 
+const ITEMS_PER_PAGE = 10;
+
 const Sites = () => {
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -54,6 +63,7 @@ const Sites = () => {
   const [selectedSite, setSelectedSite] = useState<Site | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState<SortConfig>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const { data: sites, isLoading: isLoadingSites } = useQuery({
     queryKey: ["sites"],
@@ -99,6 +109,12 @@ const Sites = () => {
     }
     return sortableItems;
   }, [filteredSites, sortConfig]);
+
+  const totalPages = Math.ceil(sortedSites.length / ITEMS_PER_PAGE);
+  const currentSites = sortedSites.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   const requestSort = (key: keyof Site) => {
     let direction: 'ascending' | 'descending' = 'ascending';
@@ -239,8 +255,8 @@ const Sites = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sortedSites.length > 0 ? (
-              sortedSites.map((site) => (
+            {currentSites.length > 0 ? (
+              currentSites.map((site) => (
                 <TableRow key={site.id}>
                   <TableCell className="font-medium">
                     <Link to={`/sites/${site.id}`} className="hover:underline">
@@ -287,6 +303,30 @@ const Sites = () => {
             )}
           </TableBody>
         </Table>
+      </div>
+
+      <div className="flex items-center justify-between mt-4">
+        <div className="text-sm text-muted-foreground">
+          Seite {currentPage} von {totalPages}
+        </div>
+        <Pagination>
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious
+                href="#"
+                onClick={(e) => { e.preventDefault(); setCurrentPage(p => Math.max(p - 1, 1)); }}
+                className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+              />
+            </PaginationItem>
+            <PaginationItem>
+              <PaginationNext
+                href="#"
+                onClick={(e) => { e.preventDefault(); setCurrentPage(p => Math.min(p + 1, totalPages)); }}
+                className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
       </div>
 
       <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
