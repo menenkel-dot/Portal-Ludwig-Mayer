@@ -16,6 +16,21 @@ export const getSites = async (): Promise<Site[]> => {
   return data || [];
 };
 
+export const getSiteById = async (id: string): Promise<Site | null> => {
+  const { data, error } = await supabase
+    .from('sites')
+    .select('*, customers(*)') // Fetch all customer data
+    .eq('id', id)
+    .single();
+
+  if (error) {
+    console.error('Error fetching site by id:', error);
+    throw new Error(error.message);
+  }
+  return data;
+};
+
+
 export const createSite = async (siteData: NewSite) => {
   const { data, error } = await supabase
     .from('sites')

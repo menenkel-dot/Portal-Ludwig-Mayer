@@ -9,6 +9,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Customers from "./pages/Customers";
 import Sites from "./pages/Sites";
+import SiteDetail from "./pages/SiteDetail";
 import Fleet from "./pages/Fleet";
 import Employees from "./pages/Employees";
 import TimeTracking from "./pages/TimeTracking";
@@ -41,6 +42,7 @@ const App = () => (
                 <Route path="/customers" element={<Customers />} />
                 <Route path="/employees" element={<Employees />} />
                 <Route path="/sites" element={<Sites />} />
+                <Route path="/sites/:id" element={<SiteDetail />} />
                 <Route path="/fleet" element={<Fleet />} />
                 <Route path="/materials" element={<Materials />} />
                 <Route path="/time-tracking" element={<TimeTracking />} />

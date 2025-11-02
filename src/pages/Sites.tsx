@@ -39,6 +39,7 @@ import { MoreHorizontal, PlusCircle } from "lucide-react";
 import { SiteForm } from "@/components/SiteForm";
 import { showSuccess, showError } from "@/utils/toast";
 import { Badge } from "@/components/ui/badge";
+import { Link } from "react-router-dom";
 
 const Sites = () => {
   const queryClient = useQueryClient();
@@ -162,7 +163,11 @@ const Sites = () => {
           <TableBody>
             {sites?.map((site) => (
               <TableRow key={site.id}>
-                <TableCell className="font-medium">{site.name}</TableCell>
+                <TableCell className="font-medium">
+                  <Link to={`/sites/${site.id}`} className="hover:underline">
+                    {site.name}
+                  </Link>
+                </TableCell>
                 <TableCell>{site.customers?.name || "N/A"}</TableCell>
                 <TableCell>{new Date(site.start_date).toLocaleDateString()}</TableCell>
                 <TableCell>
