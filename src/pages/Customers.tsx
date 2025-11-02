@@ -35,10 +35,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, PlusCircle, Search } from "lucide-react";
+import { MoreHorizontal, PlusCircle, Search, ArrowUpDown } from "lucide-react";
 import { CustomerForm } from "@/components/CustomerForm";
 import { showSuccess, showError } from "@/utils/toast";
 import { Link } from "react-router-dom";
+
+type SortConfig = {
+  key: keyof Customer;
+  direction: 'ascending' | 'descending';
+} | null;
 
 const Customers = () => {
   const queryClient = useQueryClient();
@@ -46,6 +51,7 @@ const Customers = () => {
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [sortConfig, setSortConfig] = useState<SortConfig>(null);
 
   const { data: customers, isLoading, isError } = useQuery({
     queryKey: ["customers"],
@@ -61,6 +67,32 @@ const Customers = () => {
       customer.email.toLowerCase().includes(lowercasedTerm)
     );
   }, [customers, searchTerm]);
+
+  const sortedCustomers = useMemo(() => {
+    let sortableItems = [...filteredCustomers];
+    if (sortConfig !== null) {
+      sortableItems.sort((a, b) => {
+        const valA = a[sortConfig.key];
+        const valB = b[sortConfig.key];
+        if (valA < valB) {
+          return sortConfig.direction === 'ascending' ? -1 : 1;
+        }
+        if (valA > valB) {
+          return sortConfig.direction === 'ascending' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    return sortableItems;
+  }, [filteredCustomers, sortConfig]);
+
+  const requestSort = (key: keyof Customer) => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
 
   const mutationOptions = {
     onSuccess: () => {
@@ -167,16 +199,28 @@ const Customers = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Ansprechpartner</TableHead>
-              <TableHead>E-Mail</TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => requestSort('name')}>
+                  Name <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => requestSort('contact_person')}>
+                  Ansprechpartner <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => requestSort('email')}>
+                  E-Mail <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
               <TableHead>Telefon</TableHead>
               <TableHead className="text-right">Aktionen</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredCustomers.length > 0 ? (
-              filteredCustomers.map((customer) => (
+            {sortedCustomers.length > 0 ? (
+              sortedCustomers.map((customer) => (
                 <TableRow key={customer.id}>
                   <TableCell className="font-medium">
                     <Link to={`/customers/${customer.id}`} className="hover:underline">
