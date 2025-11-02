@@ -37,6 +37,7 @@ import {
 import { MoreHorizontal, PlusCircle } from "lucide-react";
 import { CustomerForm } from "@/components/CustomerForm";
 import { showSuccess, showError } from "@/utils/toast";
+import { Link } from "react-router-dom";
 
 const Customers = () => {
   const queryClient = useQueryClient();
@@ -153,7 +154,11 @@ const Customers = () => {
           <TableBody>
             {customers?.map((customer) => (
               <TableRow key={customer.id}>
-                <TableCell className="font-medium">{customer.name}</TableCell>
+                <TableCell className="font-medium">
+                  <Link to={`/customers/${customer.id}`} className="hover:underline">
+                    {customer.name}
+                  </Link>
+                </TableCell>
                 <TableCell>{customer.contact_person}</TableCell>
                 <TableCell>{customer.email}</TableCell>
                 <TableCell>{customer.phone}</TableCell>

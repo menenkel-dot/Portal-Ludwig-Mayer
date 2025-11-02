@@ -8,6 +8,7 @@ import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Customers from "./pages/Customers";
+import CustomerDetail from "./pages/CustomerDetail";
 import Sites from "./pages/Sites";
 import SiteDetail from "./pages/SiteDetail";
 import Fleet from "./pages/Fleet";
@@ -40,6 +41,7 @@ const App = () => (
               <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/customers" element={<Customers />} />
+                <Route path="/customers/:id" element={<CustomerDetail />} />
                 <Route path="/employees" element={<Employees />} />
                 <Route path="/sites" element={<Sites />} />
                 <Route path="/sites/:id" element={<SiteDetail />} />

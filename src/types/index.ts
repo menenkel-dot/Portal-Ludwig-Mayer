@@ -7,6 +7,7 @@ export type Customer = {
   email: string;
   notes?: string;
   created_at: string;
+  sites?: Pick<Site, 'id' | 'name' | 'status' | 'start_date'>[];
 };
 
 export type Site = {
@@ -19,7 +20,7 @@ export type Site = {
   status: 'Geplant' | 'In Arbeit' | 'Abgeschlossen';
   notes?: string;
   created_at: string;
-  customers: { name: string } | null;
+  customers: { name: string; contact_person: string; email: string; phone: string; } | null;
 };
 
 export type Vehicle = {

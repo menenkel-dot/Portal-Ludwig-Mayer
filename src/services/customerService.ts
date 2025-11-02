@@ -2,7 +2,7 @@ import { supabase } from '@/lib/supabase';
 import { Customer } from '@/types';
 
 // Typ für das Erstellen eines neuen Kunden (ohne von DB generierte Felder)
-export type NewCustomer = Omit<Customer, 'id' | 'created_at'>;
+export type NewCustomer = Omit<Customer, 'id' | 'created_at' | 'sites'>;
 
 export const getCustomers = async (): Promise<Customer[]> => {
   const { data, error } = await supabase
@@ -16,6 +16,20 @@ export const getCustomers = async (): Promise<Customer[]> => {
   }
   return data || [];
 };
+
+export const getCustomerById = async (id: string): Promise<Customer | null> => {
+    const { data, error } = await supabase
+    .from('customers')
+    .select('*, sites(id, name, status, start_date)')
+    .eq('id', id)
+    .single();
+
+  if (error) {
+    console.error('Error fetching customer by id:', error);
+    throw new Error(error.message);
+  }
+  return data;
+}
 
 export const createCustomer = async (customerData: NewCustomer) => {
   const { data, error } = await supabase
