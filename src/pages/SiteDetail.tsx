@@ -7,6 +7,7 @@ import { ArrowLeft, Building, User, Mail, Phone, Calendar as CalendarIcon } from
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { SiteTimeEntries } from "@/components/SiteTimeEntries";
+import { SiteDocuments } from "@/components/SiteDocuments";
 
 const SiteDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -118,6 +119,10 @@ const SiteDetail = () => {
 
       <div className="mt-6">
         <SiteTimeEntries siteId={site.id} />
+      </div>
+      
+      <div className="mt-6">
+        <SiteDocuments siteId={site.id} />
       </div>
     </div>
   );

@@ -90,3 +90,14 @@ export type Material = {
   notes: string | null;
   created_at: string;
 };
+
+export type SiteDocument = {
+  id: string;
+  site_id: string;
+  file_name: string;
+  file_path: string;
+  file_type: string;
+  file_size: number;
+  description: string | null;
+  created_at: string;
+};
