@@ -13,6 +13,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -45,6 +52,8 @@ type SortConfig = {
   direction: 'ascending' | 'descending';
 } | null;
 
+const ITEMS_PER_PAGE = 10;
+
 const Customers = () => {
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -52,6 +61,7 @@ const Customers = () => {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState<SortConfig>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const { data: customers, isLoading, isError } = useQuery({
     queryKey: ["customers"],
@@ -85,6 +95,12 @@ const Customers = () => {
     }
     return sortableItems;
   }, [filteredCustomers, sortConfig]);
+
+  const totalPages = Math.ceil(sortedCustomers.length / ITEMS_PER_PAGE);
+  const currentCustomers = sortedCustomers.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   const requestSort = (key: keyof Customer) => {
     let direction: 'ascending' | 'descending' = 'ascending';
@@ -219,8 +235,8 @@ const Customers = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sortedCustomers.length > 0 ? (
-              sortedCustomers.map((customer) => (
+            {currentCustomers.length > 0 ? (
+              currentCustomers.map((customer) => (
                 <TableRow key={customer.id}>
                   <TableCell className="font-medium">
                     <Link to={`/customers/${customer.id}`} className="hover:underline">
@@ -259,6 +275,30 @@ const Customers = () => {
             )}
           </TableBody>
         </Table>
+      </div>
+
+      <div className="flex items-center justify-between mt-4">
+        <div className="text-sm text-muted-foreground">
+          Seite {currentPage} von {totalPages}
+        </div>
+        <Pagination>
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious
+                href="#"
+                onClick={(e) => { e.preventDefault(); setCurrentPage(p => Math.max(p - 1, 1)); }}
+                className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+              />
+            </PaginationItem>
+            <PaginationItem>
+              <PaginationNext
+                href="#"
+                onClick={(e) => { e.preventDefault(); setCurrentPage(p => Math.min(p + 1, totalPages)); }}
+                className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
       </div>
 
       <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
