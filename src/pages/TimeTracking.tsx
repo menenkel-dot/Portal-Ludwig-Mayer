@@ -10,9 +10,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, PlusCircle, Search } from "lucide-react";
+import { MoreHorizontal, PlusCircle, Search, ArrowUpDown } from "lucide-react";
 import { TimeEntryForm } from "@/components/TimeEntryForm";
 import { showSuccess, showError } from "@/utils/toast";
+
+type SortConfig = {
+  key: keyof TimeEntry;
+  direction: 'ascending' | 'descending';
+} | null;
 
 const TimeTracking = () => {
   const queryClient = useQueryClient();
@@ -20,6 +25,7 @@ const TimeTracking = () => {
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<TimeEntry | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'date', direction: 'descending' });
 
   const { data: timeEntries, isLoading: isLoadingEntries } = useQuery({ queryKey: ["timeEntries"], queryFn: getTimeEntries });
   const { data: employees, isLoading: isLoadingEmployees } = useQuery({ queryKey: ["employees"], queryFn: getEmployees });
@@ -38,6 +44,42 @@ const TimeTracking = () => {
              date.includes(lowercasedTerm);
     });
   }, [timeEntries, searchTerm]);
+
+  const sortedTimeEntries = useMemo(() => {
+    let sortableItems = [...filteredTimeEntries];
+    if (sortConfig !== null) {
+      sortableItems.sort((a, b) => {
+        let valA, valB;
+        if (sortConfig.key === 'employees') {
+          valA = `${a.employees?.last_name} ${a.employees?.first_name}`;
+          valB = `${b.employees?.last_name} ${b.employees?.first_name}`;
+        } else if (sortConfig.key === 'sites') {
+          valA = a.sites?.name || '';
+          valB = b.sites?.name || '';
+        } else {
+          valA = a[sortConfig.key];
+          valB = b[sortConfig.key];
+        }
+
+        if (valA < valB) {
+          return sortConfig.direction === 'ascending' ? -1 : 1;
+        }
+        if (valA > valB) {
+          return sortConfig.direction === 'ascending' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    return sortableItems;
+  }, [filteredTimeEntries, sortConfig]);
+
+  const requestSort = (key: keyof TimeEntry) => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
 
   const mutationOptions = {
     onSuccess: () => {
@@ -140,16 +182,32 @@ const TimeTracking = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Datum</TableHead>
-              <TableHead>Mitarbeiter</TableHead>
-              <TableHead>Baustelle</TableHead>
-              <TableHead>Stunden</TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => requestSort('date')}>
+                  Datum <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => requestSort('employees')}>
+                  Mitarbeiter <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => requestSort('sites')}>
+                  Baustelle <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => requestSort('hours_worked')}>
+                  Stunden <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
               <TableHead className="text-right">Aktionen</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredTimeEntries.length > 0 ? (
-              filteredTimeEntries.map((entry) => (
+            {sortedTimeEntries.length > 0 ? (
+              sortedTimeEntries.map((entry) => (
                 <TableRow key={entry.id}>
                   <TableCell>{new Date(entry.date).toLocaleDateString()}</TableCell>
                   <TableCell>{entry.employees?.first_name} {entry.employees?.last_name}</TableCell>
