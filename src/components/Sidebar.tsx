@@ -15,7 +15,7 @@ import {
   Box,
   UserCog,
 } from "lucide-react";
-import logo from '@/assets/logo.png';
+import logo from '../assets/logo.png';
 
 const allNavItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard", permission: "dashboard" },
