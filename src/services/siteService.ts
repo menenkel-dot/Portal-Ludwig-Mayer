@@ -6,7 +6,7 @@ export type NewSite = Omit<Site, 'id' | 'created_at' | 'customers'>;
 export const getSites = async (): Promise<Site[]> => {
   const { data, error } = await supabase
     .from('sites')
-    .select('*, customers(name)')
+    .select('*, customers(id, name)')
     .order('created_at', { ascending: false });
 
   if (error) {

@@ -20,7 +20,13 @@ export type Site = {
   status: 'Geplant' | 'In Arbeit' | 'Abgeschlossen';
   notes?: string;
   created_at: string;
-  customers: { name: string; contact_person: string; email: string; phone: string; } | null;
+  customers: { 
+    id: string;
+    name: string; 
+    contact_person?: string;
+    email?: string;
+    phone?: string;
+  } | null;
 };
 
 export type Vehicle = {

@@ -12,6 +12,7 @@ import { format, subDays } from "date-fns";
 import { de } from "date-fns/locale";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Link } from "react-router-dom";
 
 const Dashboard = () => {
   const { data: sites, isLoading: isLoadingSites } = useQuery({ queryKey: ["sites"], queryFn: getSites });
@@ -158,8 +159,20 @@ const Dashboard = () => {
                 <TableBody>
                   {activeProjects.map(project => (
                     <TableRow key={project.id}>
-                      <TableCell className="font-medium">{project.name}</TableCell>
-                      <TableCell>{project.customers?.name || "N/A"}</TableCell>
+                      <TableCell className="font-medium">
+                        <Link to={`/sites/${project.id}`} className="hover:underline">
+                          {project.name}
+                        </Link>
+                      </TableCell>
+                      <TableCell>
+                        {project.customers ? (
+                          <Link to={`/customers/${project.customers.id}`} className="hover:underline">
+                            {project.customers.name}
+                          </Link>
+                        ) : (
+                          "N/A"
+                        )}
+                      </TableCell>
                       <TableCell>{format(new Date(project.start_date), "dd.MM.yyyy")}</TableCell>
                     </TableRow>
                   ))}
