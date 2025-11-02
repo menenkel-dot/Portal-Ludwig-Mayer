@@ -1,12 +1,12 @@
 import { supabase } from '@/lib/supabase';
 import { CalculationItem } from '@/types';
 
-export type NewCalculationItem = Omit<CalculationItem, 'id' | 'created_at' | 'total_price'>;
+export type NewCalculationItem = Omit<CalculationItem, 'id' | 'created_at' | 'total_price' | 'materials'>;
 
 export const getCalculationItems = async (calculationId: string): Promise<CalculationItem[]> => {
   const { data, error } = await supabase
     .from('calculation_items')
-    .select('*')
+    .select('*, materials(name)')
     .eq('calculation_id', calculationId)
     .order('created_at', { ascending: true });
 

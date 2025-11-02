@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getCalculations } from "@/services/calculationService";
 import { getCalculationItems, createCalculationItem, updateCalculationItem, deleteCalculationItem, NewCalculationItem } from "@/services/calculationItemService";
+import { getMaterials } from "@/services/materialService";
 import { CalculationItem } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,6 +28,11 @@ const CalculationDetail = () => {
     queryKey: ["calculationItems", id],
     queryFn: () => getCalculationItems(id!),
     enabled: !!id,
+  });
+
+  const { data: materials, isLoading: isLoadingMaterials } = useQuery({
+    queryKey: ["materials"],
+    queryFn: getMaterials,
   });
 
   const mutationOptions = {
@@ -116,12 +122,15 @@ const CalculationDetail = () => {
                 <DialogHeader>
                   <DialogTitle>{selectedItem ? "Posten bearbeiten" : "Neuen Posten hinzufügen"}</DialogTitle>
                 </DialogHeader>
-                <CalculationItemForm
-                  onSubmit={handleFormSubmit}
-                  initialData={selectedItem}
-                  onCancel={() => setIsDialogOpen(false)}
-                  isLoading={createMutation.isPending || updateMutation.isPending}
-                />
+                {!isLoadingMaterials && materials && (
+                  <CalculationItemForm
+                    onSubmit={handleFormSubmit}
+                    initialData={selectedItem}
+                    materials={materials}
+                    onCancel={() => setIsDialogOpen(false)}
+                    isLoading={createMutation.isPending || updateMutation.isPending}
+                  />
+                )}
               </DialogContent>
             </Dialog>
           </div>
@@ -143,7 +152,14 @@ const CalculationDetail = () => {
                 ) : (
                   items?.map((item) => (
                     <TableRow key={item.id}>
-                      <TableCell className="font-medium">{item.description}</TableCell>
+                      <TableCell className="font-medium">
+                        {item.description}
+                        {item.material_id && (
+                          <p className="text-xs text-muted-foreground">
+                            aus Materialkatalog
+                          </p>
+                        )}
+                      </TableCell>
                       <TableCell className="text-right">{item.quantity.toFixed(2)}</TableCell>
                       <TableCell>{item.unit}</TableCell>
                       <TableCell className="text-right">{formatCurrency(item.unit_price)}</TableCell>

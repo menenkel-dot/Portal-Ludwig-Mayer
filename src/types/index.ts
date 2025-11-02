@@ -77,6 +77,8 @@ export type CalculationItem = {
   unit_price: number;
   total_price: number;
   created_at: string;
+  material_id: string | null;
+  materials: { name: string } | null;
 };
 
 export type Material = {
