@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getTimeEntries } from "@/services/timeTrackingService";
 import { getEmployees } from "@/services/employeeService";
 import { getCalculations } from "@/services/calculationService";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,8 +16,16 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Badge } from "@/components/ui/badge";
+import { DateRange } from "react-day-picker";
+import { subDays } from "date-fns";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 
 const Reports = () => {
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: subDays(new Date(), 29),
+    to: new Date(),
+  });
+
   const { data: timeEntries, isLoading: isLoadingEntries } = useQuery({
     queryKey: ["timeEntries"],
     queryFn: getTimeEntries,
@@ -35,20 +43,31 @@ const Reports = () => {
 
   const formatCurrency = (amount: number) => new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(amount);
 
+  const filteredTimeEntries = useMemo(() => {
+    if (!timeEntries || !dateRange?.from) return [];
+    const from = dateRange.from;
+    const to = dateRange.to ? new Date(dateRange.to.setHours(23, 59, 59, 999)) : new Date();
+
+    return timeEntries.filter(entry => {
+      const entryDate = new Date(entry.date);
+      return entryDate >= from && entryDate <= to;
+    });
+  }, [timeEntries, dateRange]);
+
   const hoursPerSite = useMemo(() => {
-    if (!timeEntries) return [];
-    const siteHours = timeEntries.reduce((acc, entry) => {
+    if (!filteredTimeEntries) return [];
+    const siteHours = filteredTimeEntries.reduce((acc, entry) => {
       const siteName = entry.sites?.name || "Ohne Zuordnung";
       if (!acc[siteName]) acc[siteName] = 0;
       acc[siteName] += entry.hours_worked;
       return acc;
     }, {} as Record<string, number>);
     return Object.entries(siteHours).map(([name, hours]) => ({ name, Stunden: parseFloat(hours.toFixed(2)) })).sort((a, b) => b.Stunden - a.Stunden);
-  }, [timeEntries]);
+  }, [filteredTimeEntries]);
 
   const hoursPerEmployee = useMemo(() => {
-    if (!timeEntries || !employees) return [];
-    const employeeHours = timeEntries.reduce((acc, entry) => {
+    if (!filteredTimeEntries || !employees) return [];
+    const employeeHours = filteredTimeEntries.reduce((acc, entry) => {
       const empId = entry.employee_id;
       if (!acc[empId]) acc[empId] = 0;
       acc[empId] += entry.hours_worked;
@@ -58,19 +77,23 @@ const Reports = () => {
       name: `${emp.first_name} ${emp.last_name}`,
       Stunden: parseFloat((employeeHours[emp.id] || 0).toFixed(2)),
     })).sort((a, b) => b.Stunden - a.Stunden);
-  }, [timeEntries, employees]);
+  }, [filteredTimeEntries, employees]);
 
   const projectProfitability = useMemo(() => {
-    if (!timeEntries || !employees || !calculations) return [];
+    if (!filteredTimeEntries || !employees || !calculations) return [];
+    
+    const activeSiteIds = new Set(filteredTimeEntries.map(entry => entry.site_id));
+    const relevantCalculations = calculations.filter(calc => activeSiteIds.has(calc.site_id));
+    
     const employeeRateMap = new Map(employees.map(e => [e.id, e.hourly_rate]));
-    const actualCosts = timeEntries.reduce((acc, entry) => {
+    const actualCosts = filteredTimeEntries.reduce((acc, entry) => {
       const rate = employeeRateMap.get(entry.employee_id) || 0;
       if (!acc[entry.site_id]) acc[entry.site_id] = 0;
       acc[entry.site_id] += entry.hours_worked * rate;
       return acc;
     }, {} as Record<string, number>);
 
-    return calculations.map(calc => {
+    return relevantCalculations.map(calc => {
       const target = calc.total_amount;
       const actual = actualCosts[calc.site_id] || 0;
       const difference = target - actual;
@@ -82,13 +105,16 @@ const Reports = () => {
         difference,
       };
     }).sort((a, b) => b.target - a.target);
-  }, [timeEntries, employees, calculations]);
+  }, [filteredTimeEntries, employees, calculations]);
 
   if (isLoading) return <div>Lade Reports...</div>;
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-6">Reports</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Reports</h1>
+        <DateRangePicker date={dateRange} onDateChange={setDateRange} />
+      </div>
       <Tabs defaultValue="profitability">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="profitability">Wirtschaftlichkeit</TabsTrigger>
@@ -100,7 +126,7 @@ const Reports = () => {
           <Card>
             <CardHeader>
               <CardTitle>Projekt-Wirtschaftlichkeit (Soll-Ist-Vergleich)</CardTitle>
-              <CardDescription>Vergleich der kalkulierten Kosten mit den tatsächlich erfassten Lohnkosten.</CardDescription>
+              <CardDescription>Vergleich der kalkulierten Kosten mit den tatsächlich erfassten Lohnkosten im ausgewählten Zeitraum.</CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
@@ -135,7 +161,7 @@ const Reports = () => {
           <Card>
             <CardHeader>
               <CardTitle>Stunden pro Baustelle</CardTitle>
-              <CardDescription>Übersicht der geleisteten Arbeitsstunden pro Baustelle.</CardDescription>
+              <CardDescription>Übersicht der geleisteten Arbeitsstunden pro Baustelle im ausgewählten Zeitraum.</CardDescription>
             </CardHeader>
             <CardContent className="h-[500px]">
               <ResponsiveContainer width="100%" height="100%">
@@ -154,7 +180,7 @@ const Reports = () => {
           <Card>
             <CardHeader>
               <CardTitle>Mitarbeiter-Auslastung</CardTitle>
-              <CardDescription>Gesamtzahl der von jedem Mitarbeiter erfassten Stunden.</CardDescription>
+              <CardDescription>Gesamtzahl der von jedem Mitarbeiter erfassten Stunden im ausgewählten Zeitraum.</CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
