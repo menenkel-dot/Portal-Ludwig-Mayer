@@ -57,3 +57,13 @@ export type TimeEntry = {
   employees: { first_name: string; last_name: string } | null;
   sites: { name: string } | null;
 };
+
+export type Calculation = {
+  id: string;
+  name: string;
+  description?: string;
+  site_id: string;
+  total_amount: number;
+  created_at: string;
+  sites: { name: string } | null;
+};
