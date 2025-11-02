@@ -19,6 +19,18 @@ export type Site = {
   status: 'Geplant' | 'In Arbeit' | 'Abgeschlossen';
   notes?: string;
   created_at: string;
-  // This will hold the joined customer data
   customers: { name: string } | null;
+};
+
+export type Vehicle = {
+  id: string;
+  license_plate: string;
+  vehicle_type: string;
+  manufacturer: string;
+  model: string;
+  status: 'Verfügbar' | 'Im Einsatz' | 'In Wartung';
+  location: string;
+  next_maintenance: string | null;
+  notes?: string;
+  created_at: string;
 };

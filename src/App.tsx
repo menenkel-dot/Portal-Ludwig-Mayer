@@ -9,6 +9,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Customers from "./pages/Customers";
 import Sites from "./pages/Sites";
+import Fleet from "./pages/Fleet";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
@@ -30,6 +31,7 @@ const App = () => (
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/customers" element={<Customers />} />
               <Route path="/sites" element={<Sites />} />
+              <Route path="/fleet" element={<Fleet />} />
               {/* Hier werden wir später weitere geschützte Routen hinzufügen */}
             </Route>
 
