@@ -41,21 +41,21 @@ const App = () => (
               <Route path="/" element={<Index />} />
               
               <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/customers" element={<Customers />} />
-                <Route path="/customers/:id" element={<CustomerDetail />} />
-                <Route path="/employees" element={<Employees />} />
-                <Route path="/employees/:id" element={<EmployeeDetail />} />
-                <Route path="/sites" element={<Sites />} />
-                <Route path="/sites/:id" element={<SiteDetail />} />
-                <Route path="/fleet" element={<Fleet />} />
-                <Route path="/materials" element={<Materials />} />
-                <Route path="/time-tracking" element={<TimeTracking />} />
-                <Route path="/reports" element={<Reports />} />
-                <Route path="/calculations" element={<Calculations />} />
-                <Route path="/calculations/:id" element={<CalculationDetail />} />
-                <Route path="/settings" element={<Settings />} />
-                <Route path="/users" element={<Users />} />
+                <Route path="/dashboard" element={<ProtectedRoute permission="dashboard"><Dashboard /></ProtectedRoute>} />
+                <Route path="/customers" element={<ProtectedRoute permission="customers"><Customers /></ProtectedRoute>} />
+                <Route path="/customers/:id" element={<ProtectedRoute permission="customers"><CustomerDetail /></ProtectedRoute>} />
+                <Route path="/employees" element={<ProtectedRoute permission="employees"><Employees /></ProtectedRoute>} />
+                <Route path="/employees/:id" element={<ProtectedRoute permission="employees"><EmployeeDetail /></ProtectedRoute>} />
+                <Route path="/sites" element={<ProtectedRoute permission="sites"><Sites /></ProtectedRoute>} />
+                <Route path="/sites/:id" element={<ProtectedRoute permission="sites"><SiteDetail /></ProtectedRoute>} />
+                <Route path="/fleet" element={<ProtectedRoute permission="fleet"><Fleet /></ProtectedRoute>} />
+                <Route path="/materials" element={<ProtectedRoute permission="materials"><Materials /></ProtectedRoute>} />
+                <Route path="/time-tracking" element={<ProtectedRoute permission="time-tracking"><TimeTracking /></ProtectedRoute>} />
+                <Route path="/reports" element={<ProtectedRoute permission="reports"><Reports /></ProtectedRoute>} />
+                <Route path="/calculations" element={<ProtectedRoute permission="calculations"><Calculations /></ProtectedRoute>} />
+                <Route path="/calculations/:id" element={<ProtectedRoute permission="calculations"><CalculationDetail /></ProtectedRoute>} />
+                <Route path="/settings" element={<ProtectedRoute permission="settings"><Settings /></ProtectedRoute>} />
+                <Route path="/users" element={<ProtectedRoute permission="users"><Users /></ProtectedRoute>} />
               </Route>
 
               <Route path="*" element={<NotFound />} />
