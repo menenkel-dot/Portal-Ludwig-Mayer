@@ -109,3 +109,13 @@ export type SiteDocument = {
   description: string | null;
   created_at: string;
 };
+
+export type AppUser = {
+  id: string;
+  email: string;
+  app_metadata: {
+    permissions: string[];
+    role: 'admin' | 'user';
+  };
+  created_at: string;
+};
