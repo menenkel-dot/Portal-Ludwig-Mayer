@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
+import { Link } from "react-router-dom";
 
 interface SiteTimeEntriesProps {
   siteId: string;
@@ -57,7 +58,15 @@ export const SiteTimeEntries = ({ siteId }: SiteTimeEntriesProps) => {
               entries.map((entry) => (
                 <TableRow key={entry.id}>
                   <TableCell>{format(new Date(entry.date), "dd.MM.yyyy")}</TableCell>
-                  <TableCell>{entry.employees?.first_name} {entry.employees?.last_name}</TableCell>
+                  <TableCell>
+                    {entry.employees ? (
+                      <Link to={`/employees/${entry.employees.id}`} className="hover:underline">
+                        {entry.employees.first_name} {entry.employees.last_name}
+                      </Link>
+                    ) : (
+                      "N/A"
+                    )}
+                  </TableCell>
                   <TableCell>{entry.hours_worked.toFixed(2)}</TableCell>
                   <TableCell>{entry.description || "-"}</TableCell>
                 </TableRow>

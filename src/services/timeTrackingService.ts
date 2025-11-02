@@ -6,7 +6,7 @@ export type NewTimeEntry = Omit<TimeEntry, 'id' | 'created_at' | 'employees' | '
 export const getTimeEntries = async (): Promise<TimeEntry[]> => {
   const { data, error } = await supabase
     .from('time_entries')
-    .select('*, employees(first_name, last_name), sites(name)')
+    .select('*, employees(id, first_name, last_name), sites(id, name)')
     .order('date', { ascending: false });
 
   if (error) {
@@ -19,7 +19,7 @@ export const getTimeEntries = async (): Promise<TimeEntry[]> => {
 export const getTimeEntriesForSite = async (siteId: string): Promise<TimeEntry[]> => {
   const { data, error } = await supabase
     .from('time_entries')
-    .select('*, employees(first_name, last_name)')
+    .select('*, employees(id, first_name, last_name)')
     .eq('site_id', siteId)
     .order('date', { ascending: false });
 

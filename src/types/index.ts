@@ -62,8 +62,8 @@ export type TimeEntry = {
   hours_worked: number;
   description?: string;
   created_at: string;
-  employees: { first_name: string; last_name: string } | null;
-  sites: { name: string } | null;
+  employees: { id: string; first_name: string; last_name: string } | null;
+  sites: { id: string; name: string } | null;
 };
 
 export type Calculation = {
