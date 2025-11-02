@@ -1,13 +1,14 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getEmployees, createEmployee, updateEmployee, deleteEmployee, NewEmployee } from "@/services/employeeService";
 import { Employee } from "@/types";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, PlusCircle } from "lucide-react";
+import { MoreHorizontal, PlusCircle, Search } from "lucide-react";
 import { EmployeeForm } from "@/components/EmployeeForm";
 import { showSuccess, showError } from "@/utils/toast";
 
@@ -16,11 +17,23 @@ const Employees = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const { data: employees, isLoading } = useQuery({
     queryKey: ["employees"],
     queryFn: getEmployees,
   });
+
+  const filteredEmployees = useMemo(() => {
+    if (!employees) return [];
+    const lowercasedTerm = searchTerm.toLowerCase();
+    return employees.filter(employee =>
+      employee.first_name.toLowerCase().includes(lowercasedTerm) ||
+      employee.last_name.toLowerCase().includes(lowercasedTerm) ||
+      employee.position.toLowerCase().includes(lowercasedTerm) ||
+      employee.email.toLowerCase().includes(lowercasedTerm)
+    );
+  }, [employees, searchTerm]);
 
   const mutationOptions = {
     onSuccess: () => {
@@ -84,24 +97,35 @@ const Employees = () => {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Mitarbeiterverwaltung</h1>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => openDialog()}>
-              <PlusCircle className="mr-2 h-4 w-4" /> Neuer Mitarbeiter
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[625px]">
-            <DialogHeader>
-              <DialogTitle>{selectedEmployee ? "Mitarbeiter bearbeiten" : "Neuen Mitarbeiter anlegen"}</DialogTitle>
-            </DialogHeader>
-            <EmployeeForm
-              onSubmit={handleFormSubmit}
-              initialData={selectedEmployee}
-              onCancel={() => setIsDialogOpen(false)}
-              isLoading={createMutation.isPending || updateMutation.isPending}
+        <div className="flex items-center space-x-2">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Mitarbeiter suchen..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-8 w-64"
             />
-          </DialogContent>
-        </Dialog>
+          </div>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => openDialog()}>
+                <PlusCircle className="mr-2 h-4 w-4" /> Neuer Mitarbeiter
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[625px]">
+              <DialogHeader>
+                <DialogTitle>{selectedEmployee ? "Mitarbeiter bearbeiten" : "Neuen Mitarbeiter anlegen"}</DialogTitle>
+              </DialogHeader>
+              <EmployeeForm
+                onSubmit={handleFormSubmit}
+                initialData={selectedEmployee}
+                onCancel={() => setIsDialogOpen(false)}
+                isLoading={createMutation.isPending || updateMutation.isPending}
+              />
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <div className="bg-white rounded-lg shadow">
@@ -116,25 +140,33 @@ const Employees = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {employees?.map((employee) => (
-              <TableRow key={employee.id}>
-                <TableCell className="font-medium">{employee.last_name}, {employee.first_name}</TableCell>
-                <TableCell>{employee.position}</TableCell>
-                <TableCell>{employee.email}</TableCell>
-                <TableCell>{employee.hourly_rate.toFixed(2)} €</TableCell>
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0"><MoreHorizontal className="h-4 w-4" /></Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => openDialog(employee)}>Bearbeiten</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => openDeleteConfirm(employee)} className="text-red-600">Löschen</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+            {filteredEmployees.length > 0 ? (
+              filteredEmployees.map((employee) => (
+                <TableRow key={employee.id}>
+                  <TableCell className="font-medium">{employee.last_name}, {employee.first_name}</TableCell>
+                  <TableCell>{employee.position}</TableCell>
+                  <TableCell>{employee.email}</TableCell>
+                  <TableCell>{employee.hourly_rate.toFixed(2)} €</TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0"><MoreHorizontal className="h-4 w-4" /></Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => openDialog(employee)}>Bearbeiten</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => openDeleteConfirm(employee)} className="text-red-600">Löschen</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={5} className="h-24 text-center">
+                  Keine Ergebnisse gefunden.
                 </TableCell>
               </TableRow>
-            ))}
+            )}
           </TableBody>
         </Table>
       </div>
