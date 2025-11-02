@@ -8,9 +8,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, PlusCircle, Search } from "lucide-react";
+import { MoreHorizontal, PlusCircle, Search, ArrowUpDown } from "lucide-react";
 import { EmployeeForm } from "@/components/EmployeeForm";
 import { showSuccess, showError } from "@/utils/toast";
+
+type SortConfig = {
+  key: keyof Employee;
+  direction: 'ascending' | 'descending';
+} | null;
 
 const Employees = () => {
   const queryClient = useQueryClient();
@@ -18,6 +23,7 @@ const Employees = () => {
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'last_name', direction: 'ascending' });
 
   const { data: employees, isLoading } = useQuery({
     queryKey: ["employees"],
@@ -34,6 +40,32 @@ const Employees = () => {
       employee.email.toLowerCase().includes(lowercasedTerm)
     );
   }, [employees, searchTerm]);
+
+  const sortedEmployees = useMemo(() => {
+    let sortableItems = [...filteredEmployees];
+    if (sortConfig !== null) {
+      sortableItems.sort((a, b) => {
+        const valA = a[sortConfig.key];
+        const valB = b[sortConfig.key];
+        if (valA < valB) {
+          return sortConfig.direction === 'ascending' ? -1 : 1;
+        }
+        if (valA > valB) {
+          return sortConfig.direction === 'ascending' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    return sortableItems;
+  }, [filteredEmployees, sortConfig]);
+
+  const requestSort = (key: keyof Employee) => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
 
   const mutationOptions = {
     onSuccess: () => {
@@ -132,16 +164,32 @@ const Employees = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Position</TableHead>
-              <TableHead>E-Mail</TableHead>
-              <TableHead>Stundensatz</TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => requestSort('last_name')}>
+                  Name <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => requestSort('position')}>
+                  Position <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => requestSort('email')}>
+                  E-Mail <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => requestSort('hourly_rate')}>
+                  Stundensatz <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
               <TableHead className="text-right">Aktionen</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredEmployees.length > 0 ? (
-              filteredEmployees.map((employee) => (
+            {sortedEmployees.length > 0 ? (
+              sortedEmployees.map((employee) => (
                 <TableRow key={employee.id}>
                   <TableCell className="font-medium">{employee.last_name}, {employee.first_name}</TableCell>
                   <TableCell>{employee.position}</TableCell>
