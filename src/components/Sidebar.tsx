@@ -15,6 +15,7 @@ import {
   Box,
   UserCog,
 } from "lucide-react";
+import logo from '@/assets/logo.png';
 
 const allNavItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard", permission: "dashboard" },
@@ -54,7 +55,7 @@ const Sidebar = () => {
   return (
     <aside className="w-64 bg-white dark:bg-gray-800 flex flex-col border-r">
       <div className="p-4 border-b">
-        <img src="/logo.png" alt="Logo" className="h-12" />
+        <img src={logo} alt="Logo" className="h-12" />
       </div>
       <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
         {visibleNavItems.map((item) => (
