@@ -78,3 +78,13 @@ export type CalculationItem = {
   total_price: number;
   created_at: string;
 };
+
+export type Material = {
+  id: string;
+  name: string;
+  unit: string;
+  price_per_unit: number;
+  supplier: string | null;
+  notes: string | null;
+  created_at: string;
+};

@@ -16,6 +16,7 @@ import Reports from "./pages/Reports";
 import Calculations from "./pages/Calculations";
 import CalculationDetail from "./pages/CalculationDetail";
 import Settings from "./pages/Settings";
+import Materials from "./pages/Materials";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
@@ -41,6 +42,7 @@ const App = () => (
                 <Route path="/employees" element={<Employees />} />
                 <Route path="/sites" element={<Sites />} />
                 <Route path="/fleet" element={<Fleet />} />
+                <Route path="/materials" element={<Materials />} />
                 <Route path="/time-tracking" element={<TimeTracking />} />
                 <Route path="/reports" element={<Reports />} />
                 <Route path="/calculations" element={<Calculations />} />

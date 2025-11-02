@@ -11,7 +11,8 @@ import {
   Settings,
   LogOut,
   LayoutDashboard,
-  Contact
+  Contact,
+  Box,
 } from "lucide-react";
 
 const navItems = [
@@ -20,6 +21,7 @@ const navItems = [
   { href: "/employees", icon: Contact, label: "Mitarbeiter" },
   { href: "/sites", icon: Building, label: "Baustellen" },
   { href: "/fleet", icon: Truck, label: "Fuhrpark" },
+  { href: "/materials", icon: Box, label: "Materialien" },
   { href: "/calculations", icon: Calculator, label: "Kalkulation" },
   { href: "/time-tracking", icon: Clock, label: "Zeiterfassung" },
   { href: "/reports", icon: FileText, label: "Reports" },
