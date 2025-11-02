@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getSites, createSite, updateSite, deleteSite, NewSite } from "@/services/siteService";
 import { getCustomers } from "@/services/customerService";
 import { Site } from "@/types";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -35,7 +36,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, PlusCircle } from "lucide-react";
+import { MoreHorizontal, PlusCircle, Search } from "lucide-react";
 import { SiteForm } from "@/components/SiteForm";
 import { showSuccess, showError } from "@/utils/toast";
 import { Badge } from "@/components/ui/badge";
@@ -46,6 +47,7 @@ const Sites = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [selectedSite, setSelectedSite] = useState<Site | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const { data: sites, isLoading: isLoadingSites } = useQuery({
     queryKey: ["sites"],
@@ -56,6 +58,16 @@ const Sites = () => {
     queryKey: ["customers"],
     queryFn: getCustomers,
   });
+
+  const filteredSites = useMemo(() => {
+    if (!sites) return [];
+    const lowercasedTerm = searchTerm.toLowerCase();
+    return sites.filter(site =>
+      site.name.toLowerCase().includes(lowercasedTerm) ||
+      (site.customers?.name && site.customers.name.toLowerCase().includes(lowercasedTerm)) ||
+      site.address.toLowerCase().includes(lowercasedTerm)
+    );
+  }, [sites, searchTerm]);
 
   const mutationOptions = {
     onSuccess: () => {
@@ -124,29 +136,40 @@ const Sites = () => {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Baustellenverwaltung</h1>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => openDialog()}>
-              <PlusCircle className="mr-2 h-4 w-4" /> Neue Baustelle
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[625px]">
-            <DialogHeader>
-              <DialogTitle>
-                {selectedSite ? "Baustelle bearbeiten" : "Neue Baustelle anlegen"}
-              </DialogTitle>
-            </DialogHeader>
-            {customers && (
-              <SiteForm
-                onSubmit={handleFormSubmit}
-                initialData={selectedSite}
-                customers={customers}
-                onCancel={() => setIsDialogOpen(false)}
-                isLoading={createMutation.isPending || updateMutation.isPending}
-              />
-            )}
-          </DialogContent>
-        </Dialog>
+        <div className="flex items-center space-x-2">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Baustellen suchen..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-8 w-64"
+            />
+          </div>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => openDialog()}>
+                <PlusCircle className="mr-2 h-4 w-4" /> Neue Baustelle
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[625px]">
+              <DialogHeader>
+                <DialogTitle>
+                  {selectedSite ? "Baustelle bearbeiten" : "Neue Baustelle anlegen"}
+                </DialogTitle>
+              </DialogHeader>
+              {customers && (
+                <SiteForm
+                  onSubmit={handleFormSubmit}
+                  initialData={selectedSite}
+                  customers={customers}
+                  onCancel={() => setIsDialogOpen(false)}
+                  isLoading={createMutation.isPending || updateMutation.isPending}
+                />
+              )}
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <div className="bg-white rounded-lg shadow">
@@ -161,44 +184,52 @@ const Sites = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sites?.map((site) => (
-              <TableRow key={site.id}>
-                <TableCell className="font-medium">
-                  <Link to={`/sites/${site.id}`} className="hover:underline">
-                    {site.name}
-                  </Link>
-                </TableCell>
-                <TableCell>{site.customers?.name || "N/A"}</TableCell>
-                <TableCell>{new Date(site.start_date).toLocaleDateString()}</TableCell>
-                <TableCell>
-                  <Badge variant={
-                    site.status === 'Abgeschlossen' ? 'secondary' :
-                    site.status === 'In Arbeit' ? 'default' :
-                    'outline'
-                  }>
-                    {site.status}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
-                        <span className="sr-only">Menü öffnen</span>
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => openDialog(site)}>
-                        Bearbeiten
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => openDeleteConfirm(site)} className="text-red-600">
-                        Löschen
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+            {filteredSites.length > 0 ? (
+              filteredSites.map((site) => (
+                <TableRow key={site.id}>
+                  <TableCell className="font-medium">
+                    <Link to={`/sites/${site.id}`} className="hover:underline">
+                      {site.name}
+                    </Link>
+                  </TableCell>
+                  <TableCell>{site.customers?.name || "N/A"}</TableCell>
+                  <TableCell>{new Date(site.start_date).toLocaleDateString()}</TableCell>
+                  <TableCell>
+                    <Badge variant={
+                      site.status === 'Abgeschlossen' ? 'secondary' :
+                      site.status === 'In Arbeit' ? 'default' :
+                      'outline'
+                    }>
+                      {site.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <span className="sr-only">Menü öffnen</span>
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => openDialog(site)}>
+                          Bearbeiten
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => openDeleteConfirm(site)} className="text-red-600">
+                          Löschen
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={5} className="h-24 text-center">
+                  Keine Ergebnisse gefunden.
                 </TableCell>
               </TableRow>
-            ))}
+            )}
           </TableBody>
         </Table>
       </div>
