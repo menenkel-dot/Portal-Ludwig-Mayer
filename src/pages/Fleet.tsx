@@ -8,10 +8,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, PlusCircle, Search } from "lucide-react";
+import { MoreHorizontal, PlusCircle, Search, ArrowUpDown } from "lucide-react";
 import { VehicleForm } from "@/components/VehicleForm";
 import { showSuccess, showError } from "@/utils/toast";
 import { Badge } from "@/components/ui/badge";
+
+type SortConfig = {
+  key: keyof Vehicle;
+  direction: 'ascending' | 'descending';
+} | null;
 
 const Fleet = () => {
   const queryClient = useQueryClient();
@@ -19,6 +24,7 @@ const Fleet = () => {
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [sortConfig, setSortConfig] = useState<SortConfig>(null);
 
   const { data: vehicles, isLoading } = useQuery({
     queryKey: ["vehicles"],
@@ -35,6 +41,32 @@ const Fleet = () => {
       vehicle.vehicle_type.toLowerCase().includes(lowercasedTerm)
     );
   }, [vehicles, searchTerm]);
+
+  const sortedVehicles = useMemo(() => {
+    let sortableItems = [...filteredVehicles];
+    if (sortConfig !== null) {
+      sortableItems.sort((a, b) => {
+        const valA = a[sortConfig.key];
+        const valB = b[sortConfig.key];
+        if (valA < valB) {
+          return sortConfig.direction === 'ascending' ? -1 : 1;
+        }
+        if (valA > valB) {
+          return sortConfig.direction === 'ascending' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    return sortableItems;
+  }, [filteredVehicles, sortConfig]);
+
+  const requestSort = (key: keyof Vehicle) => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
 
   const mutationOptions = {
     onSuccess: () => {
@@ -133,17 +165,37 @@ const Fleet = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Fahrzeug</TableHead>
-              <TableHead>Kennzeichen</TableHead>
-              <TableHead>Typ</TableHead>
-              <TableHead>Standort</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => requestSort('manufacturer')}>
+                  Fahrzeug <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => requestSort('license_plate')}>
+                  Kennzeichen <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => requestSort('vehicle_type')}>
+                  Typ <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => requestSort('location')}>
+                  Standort <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => requestSort('status')}>
+                  Status <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
               <TableHead className="text-right">Aktionen</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredVehicles.length > 0 ? (
-              filteredVehicles.map((vehicle) => (
+            {sortedVehicles.length > 0 ? (
+              sortedVehicles.map((vehicle) => (
                 <TableRow key={vehicle.id}>
                   <TableCell className="font-medium">{vehicle.manufacturer} {vehicle.model}</TableCell>
                   <TableCell>{vehicle.license_plate}</TableCell>
