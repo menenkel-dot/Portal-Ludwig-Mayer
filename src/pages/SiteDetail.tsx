@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { SiteTimeEntries } from "@/components/SiteTimeEntries";
 import { SiteDocuments } from "@/components/SiteDocuments";
+import { SiteNotes } from "@/components/SiteNotes";
 
 const SiteDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -123,6 +124,10 @@ const SiteDetail = () => {
       
       <div className="mt-6">
         <SiteDocuments siteId={site.id} />
+      </div>
+
+      <div className="mt-6">
+        <SiteNotes siteId={site.id} />
       </div>
     </div>
   );

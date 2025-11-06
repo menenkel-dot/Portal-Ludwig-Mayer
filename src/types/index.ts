@@ -120,3 +120,23 @@ export type AppUser = {
   };
   created_at: string;
 };
+
+export type SiteNoteAttachment = {
+  id: string;
+  note_id: string;
+  file_path: string;
+  file_name: string;
+  file_type: string;
+  file_size: number;
+  created_at: string;
+};
+
+export type SiteNote = {
+  id: string;
+  site_id: string;
+  user_id: string | null;
+  user_email: string | null;
+  content: string | null;
+  created_at: string;
+  site_note_attachments: SiteNoteAttachment[];
+};
