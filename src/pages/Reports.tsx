@@ -12,7 +12,6 @@ import {
   XAxis,
   YAxis,
   Tooltip,
-  Legend,
   ResponsiveContainer,
 } from "recharts";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +19,7 @@ import { DateRange } from "react-day-picker";
 import { subDays } from "date-fns";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import WeeklyEmployeeReport from "@/components/WeeklyEmployeeReport";
+import ProjectCostReport from "@/components/ProjectCostReport";
 
 const Reports = () => {
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
@@ -122,11 +122,12 @@ const Reports = () => {
         <DateRangePicker date={dateRange} onDateChange={setDateRange} />
       </div>
       <Tabs defaultValue="profitability">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="profitability">Wirtschaftlichkeit</TabsTrigger>
           <TabsTrigger value="site_hours">Stunden/Baustelle</TabsTrigger>
           <TabsTrigger value="employee_hours">Mitarbeiter-Auslastung</TabsTrigger>
           <TabsTrigger value="weekly_employee_report">Mitarbeiter Gesamt</TabsTrigger>
+          <TabsTrigger value="project_cost">Projektauswertung</TabsTrigger>
         </TabsList>
 
         <TabsContent value="profitability" className="mt-6">
@@ -216,6 +217,17 @@ const Reports = () => {
           ) : (
             <WeeklyEmployeeReport
               timeEntries={timeEntries || []}
+              employees={employees || []}
+            />
+          )}
+        </TabsContent>
+
+        <TabsContent value="project_cost" className="mt-6">
+          {isLoading ? (
+            <Card><CardHeader><CardTitle>Lade Report...</CardTitle></CardHeader></Card>
+          ) : (
+            <ProjectCostReport
+              timeEntries={filteredTimeEntries || []}
               employees={employees || []}
             />
           )}

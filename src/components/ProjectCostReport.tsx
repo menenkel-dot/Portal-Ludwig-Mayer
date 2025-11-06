@@ -1,0 +1,138 @@
+import { useMemo } from "react";
+import { Employee, TimeEntry } from "@/types";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  TableFooter,
+} from "@/components/ui/table";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+
+interface ProjectCostReportProps {
+  timeEntries: TimeEntry[];
+  employees: Employee[];
+}
+
+const formatCurrency = (amount: number) => new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(amount);
+
+const ProjectCostReport = ({ timeEntries, employees }: ProjectCostReportProps) => {
+  const reportData = useMemo(() => {
+    if (!timeEntries || !employees) return [];
+
+    const employeeMap = new Map(employees.map(e => [e.id, { name: `${e.last_name}, ${e.first_name}`, rate: e.hourly_rate }]));
+
+    const projects = timeEntries
+      .filter(entry => entry.entry_type === 'Arbeit' && entry.site_id)
+      .reduce((acc, entry) => {
+        const siteId = entry.site_id!;
+        const siteName = entry.sites?.name || 'Unbekanntes Projekt';
+
+        if (!acc[siteId]) {
+          acc[siteId] = {
+            siteName,
+            employees: {},
+          };
+        }
+
+        const project = acc[siteId];
+        const employeeInfo = employeeMap.get(entry.employee_id);
+
+        if (employeeInfo) {
+          if (!project.employees[entry.employee_id]) {
+            project.employees[entry.employee_id] = {
+              name: employeeInfo.name,
+              rate: employeeInfo.rate,
+              hours: 0,
+            };
+          }
+          project.employees[entry.employee_id].hours += entry.hours_worked;
+        }
+
+        return acc;
+      }, {} as Record<string, any>);
+
+    return Object.values(projects).map(project => {
+      const employeeDetails = Object.values(project.employees).map((emp: any) => {
+        const cost = emp.hours * emp.rate;
+        return { ...emp, cost };
+      }).sort((a, b) => a.name.localeCompare(b.name));
+
+      const totalHours = employeeDetails.reduce((sum, emp) => sum + emp.hours, 0);
+      const totalCost = employeeDetails.reduce((sum, emp) => sum + emp.cost, 0);
+
+      return {
+        siteName: project.siteName,
+        employees: employeeDetails,
+        totalHours,
+        totalCost,
+      };
+    }).sort((a, b) => a.siteName.localeCompare(b.siteName));
+
+  }, [timeEntries, employees]);
+
+  if (reportData.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Projektauswertung</CardTitle>
+          <CardDescription>
+            Keine Arbeitszeiten für Projekte im ausgewählten Zeitraum gefunden.
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {reportData.map((project, index) => (
+        <Card key={index}>
+          <CardHeader>
+            <CardTitle>{project.siteName}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Mitarbeiter</TableHead>
+                  <TableHead className="text-right">Stunden</TableHead>
+                  <TableHead className="text-right">Stundensatz</TableHead>
+                  <TableHead className="text-right">Gesamtkosten</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {project.employees.map((emp: any, empIndex: number) => (
+                  <TableRow key={empIndex}>
+                    <TableCell className="font-medium">{emp.name}</TableCell>
+                    <TableCell className="text-right">{emp.hours.toFixed(2)}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(emp.rate)}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(emp.cost)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+              <TableFooter>
+                <TableRow>
+                  <TableCell className="font-bold">Gesamt</TableCell>
+                  <TableCell className="text-right font-bold">{project.totalHours.toFixed(2)}</TableCell>
+                  <TableCell></TableCell>
+                  <TableCell className="text-right font-bold">{formatCurrency(project.totalCost)}</TableCell>
+                </TableRow>
+              </TableFooter>
+            </Table>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+};
+
+export default ProjectCostReport;
