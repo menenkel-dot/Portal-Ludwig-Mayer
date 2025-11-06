@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { DateRange } from "react-day-picker";
 import { subDays } from "date-fns";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
+import WeeklyEmployeeReport from "@/components/WeeklyEmployeeReport";
 
 const Reports = () => {
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
@@ -121,10 +122,11 @@ const Reports = () => {
         <DateRangePicker date={dateRange} onDateChange={setDateRange} />
       </div>
       <Tabs defaultValue="profitability">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="profitability">Wirtschaftlichkeit</TabsTrigger>
           <TabsTrigger value="site_hours">Stunden/Baustelle</TabsTrigger>
           <TabsTrigger value="employee_hours">Mitarbeiter-Auslastung</TabsTrigger>
+          <TabsTrigger value="weekly_employee_report">Mitarbeiter Gesamt</TabsTrigger>
         </TabsList>
 
         <TabsContent value="profitability" className="mt-6">
@@ -206,6 +208,17 @@ const Reports = () => {
               </Table>
             </CardContent>
           </Card>
+        </TabsContent>
+        
+        <TabsContent value="weekly_employee_report" className="mt-6">
+          {isLoading ? (
+            <Card><CardHeader><CardTitle>Lade Report...</CardTitle></CardHeader></Card>
+          ) : (
+            <WeeklyEmployeeReport
+              timeEntries={timeEntries || []}
+              employees={employees || []}
+            />
+          )}
         </TabsContent>
       </Tabs>
     </div>
