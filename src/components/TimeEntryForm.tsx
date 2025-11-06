@@ -67,9 +67,9 @@ export const TimeEntryForm = ({ onSubmit, initialData, employees, sites, onCance
   React.useEffect(() => {
     if (entryType === 'Urlaub' || entryType === 'Schlechtwetter') {
       form.setValue('site_id', null);
-      // Set hours to 8 if it's a new entry or was 0
+      // Set hours to 9 if it's a new entry or was 0
       if (!initialData || initialData.hours_worked === 0) {
-        form.setValue('hours_worked', 8);
+        form.setValue('hours_worked', 9);
       }
     }
   }, [entryType, form, initialData]);
@@ -165,7 +165,7 @@ export const TimeEntryForm = ({ onSubmit, initialData, employees, sites, onCance
             <FormItem>
               <FormLabel>Stunden</FormLabel>
               <FormControl>
-                <Input type="number" step="0.25" placeholder="8" {...field} />
+                <Input type="number" step="0.25" placeholder="9" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
