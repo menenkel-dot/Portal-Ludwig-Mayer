@@ -51,9 +51,9 @@ const Dashboard = () => {
     const availableVehicles = vehicles?.filter((vehicle) => vehicle.status === "Verfügbar").length || 0;
     
     const today = new Date().toISOString().split("T")[0];
-    const todaysEntries = timeEntries?.filter((entry) => entry.date.startsWith(today)) || [];
-    const employeesWorkingToday = new Set(todaysEntries.map(entry => entry.employee_id)).size;
-    const hoursToday = todaysEntries.reduce((sum, entry) => sum + entry.hours_worked, 0);
+    const todaysWorkEntries = timeEntries?.filter((entry) => entry.date.startsWith(today) && entry.entry_type === 'Arbeit') || [];
+    const employeesWorkingToday = new Set(todaysWorkEntries.map(entry => entry.employee_id)).size;
+    const hoursToday = todaysWorkEntries.reduce((sum, entry) => sum + entry.hours_worked, 0);
 
     const allStats = [
       { title: "Aktive Baustellen", value: activeSites, icon: Building, permission: 'sites' },
@@ -72,7 +72,7 @@ const Dashboard = () => {
     return last7Days.map(day => {
       const dayString = format(day, "yyyy-MM-dd");
       const hours = timeEntries
-        .filter(entry => entry.date.startsWith(dayString))
+        .filter(entry => entry.date.startsWith(dayString) && entry.entry_type === 'Arbeit')
         .reduce((sum, entry) => sum + entry.hours_worked, 0);
       return {
         name: format(day, "EEE", { locale: de }),

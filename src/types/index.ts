@@ -57,11 +57,12 @@ export type Employee = {
 export type TimeEntry = {
   id: string;
   employee_id: string;
-  site_id: string;
+  site_id: string | null;
   date: string;
   hours_worked: number;
   description?: string;
   created_at: string;
+  entry_type: 'Arbeit' | 'Urlaub' | 'Schlechtwetter';
   employees: { id: string; first_name: string; last_name: string } | null;
   sites: { id: string; name: string } | null;
 };

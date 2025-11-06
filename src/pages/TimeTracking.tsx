@@ -14,6 +14,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { MoreHorizontal, PlusCircle, Search, ArrowUpDown } from "lucide-react";
 import { TimeEntryForm } from "@/components/TimeEntryForm";
 import { showSuccess, showError } from "@/utils/toast";
+import { Badge } from "@/components/ui/badge";
 
 type SortConfig = {
   key: keyof TimeEntry;
@@ -208,6 +209,11 @@ const TimeTracking = () => {
                 </Button>
               </TableHead>
               <TableHead>
+                <Button variant="ghost" onClick={() => requestSort('entry_type')}>
+                  Typ <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
+              <TableHead>
                 <Button variant="ghost" onClick={() => requestSort('hours_worked')}>
                   Stunden <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
@@ -221,7 +227,16 @@ const TimeTracking = () => {
                 <TableRow key={entry.id}>
                   <TableCell>{new Date(entry.date).toLocaleDateString()}</TableCell>
                   <TableCell>{entry.employees?.first_name} {entry.employees?.last_name}</TableCell>
-                  <TableCell>{entry.sites?.name}</TableCell>
+                  <TableCell>{entry.sites?.name || "-"}</TableCell>
+                  <TableCell>
+                    <Badge variant={
+                      entry.entry_type === 'Arbeit' ? 'secondary' :
+                      entry.entry_type === 'Urlaub' ? 'outline' :
+                      'default'
+                    }>
+                      {entry.entry_type}
+                    </Badge>
+                  </TableCell>
                   <TableCell>{entry.hours_worked.toFixed(2)}</TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
@@ -238,7 +253,7 @@ const TimeTracking = () => {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center">
+                <TableCell colSpan={6} className="h-24 text-center">
                   Keine Ergebnisse gefunden.
                 </TableCell>
               </TableRow>

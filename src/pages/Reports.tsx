@@ -56,12 +56,14 @@ const Reports = () => {
 
   const hoursPerSite = useMemo(() => {
     if (!filteredTimeEntries) return [];
-    const siteHours = filteredTimeEntries.reduce((acc, entry) => {
-      const siteName = entry.sites?.name || "Ohne Zuordnung";
-      if (!acc[siteName]) acc[siteName] = 0;
-      acc[siteName] += entry.hours_worked;
-      return acc;
-    }, {} as Record<string, number>);
+    const siteHours = filteredTimeEntries
+      .filter(entry => entry.entry_type === 'Arbeit')
+      .reduce((acc, entry) => {
+        const siteName = entry.sites?.name || "Ohne Zuordnung";
+        if (!acc[siteName]) acc[siteName] = 0;
+        acc[siteName] += entry.hours_worked;
+        return acc;
+      }, {} as Record<string, number>);
     return Object.entries(siteHours).map(([name, hours]) => ({ name, Stunden: parseFloat(hours.toFixed(2)) })).sort((a, b) => b.Stunden - a.Stunden);
   }, [filteredTimeEntries]);
 
@@ -82,14 +84,17 @@ const Reports = () => {
   const projectProfitability = useMemo(() => {
     if (!filteredTimeEntries || !employees || !calculations) return [];
     
-    const activeSiteIds = new Set(filteredTimeEntries.map(entry => entry.site_id));
+    const workEntries = filteredTimeEntries.filter(entry => entry.entry_type === 'Arbeit');
+    const activeSiteIds = new Set(workEntries.map(entry => entry.site_id));
     const relevantCalculations = calculations.filter(calc => activeSiteIds.has(calc.site_id));
     
     const employeeRateMap = new Map(employees.map(e => [e.id, e.hourly_rate]));
-    const actualCosts = filteredTimeEntries.reduce((acc, entry) => {
+    const actualCosts = workEntries.reduce((acc, entry) => {
       const rate = employeeRateMap.get(entry.employee_id) || 0;
-      if (!acc[entry.site_id]) acc[entry.site_id] = 0;
-      acc[entry.site_id] += entry.hours_worked * rate;
+      if (entry.site_id) {
+        if (!acc[entry.site_id]) acc[entry.site_id] = 0;
+        acc[entry.site_id] += entry.hours_worked * rate;
+      }
       return acc;
     }, {} as Record<string, number>);
 
