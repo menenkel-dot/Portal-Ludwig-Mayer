@@ -33,7 +33,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
+      <ThemeProvider attribute="class" defaultTheme="system" storageKey="vite-ui-theme">
         <BrowserRouter>
           <AuthProvider>
             <Routes>
