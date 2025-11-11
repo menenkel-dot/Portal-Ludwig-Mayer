@@ -194,7 +194,11 @@ const Calculations = () => {
             {sortedCalculations.length > 0 ? (
               sortedCalculations.map((calc) => (
                 <TableRow key={calc.id}>
-                  <TableCell className="font-medium">{calc.name}</TableCell>
+                  <TableCell className="font-medium">
+                    <Link to={`/calculations/${calc.id}`} className="hover:underline">
+                      {calc.name}
+                    </Link>
+                  </TableCell>
                   <TableCell>{calc.sites?.name || "N/A"}</TableCell>
                   <TableCell>{new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(calc.total_amount)}</TableCell>
                   <TableCell className="text-right">
