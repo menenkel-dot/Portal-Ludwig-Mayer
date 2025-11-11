@@ -9,25 +9,15 @@ import { format } from "date-fns";
 import { SiteTimeEntries } from "@/components/SiteTimeEntries";
 import { SiteDocuments } from "@/components/SiteDocuments";
 import { SiteNotes } from "@/components/SiteNotes";
-import { useEffect, useState } from "react";
 
 const SiteDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const [mapSrc, setMapSrc] = useState<string | null>(null);
 
   const { data: site, isLoading, isError } = useQuery({
     queryKey: ["site", id],
     queryFn: () => getSiteById(id!),
     enabled: !!id,
   });
-
-  useEffect(() => {
-    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-    if (apiKey && site?.address) {
-      const encodedAddress = encodeURIComponent(site.address);
-      setMapSrc(`https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=${encodedAddress}`);
-    }
-  }, [site]);
 
   if (isLoading) {
     return (
@@ -126,29 +116,6 @@ const SiteDetail = () => {
             </CardContent>
           </Card>
         )}
-      </div>
-
-      <div className="mt-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Standort auf der Karte</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {mapSrc ? (
-              <iframe
-                className="w-full h-96 border-0 rounded-md"
-                loading="lazy"
-                allowFullScreen
-                src={mapSrc}>
-              </iframe>
-            ) : (
-              <div className="text-center text-muted-foreground p-4 bg-muted rounded-md">
-                <p>Google Maps API-Schlüssel nicht konfiguriert.</p>
-                <p className="text-sm">Bitte fügen Sie <code className="bg-background p-1 rounded-sm">VITE_GOOGLE_MAPS_API_KEY</code> zu Ihren Umgebungsvariablen hinzu, um die Karte anzuzeigen.</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
       </div>
 
       <div className="mt-6">
