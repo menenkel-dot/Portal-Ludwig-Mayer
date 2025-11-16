@@ -152,19 +152,19 @@ export const TimeEntryList = () => {
 
   return (
     <div>
-      <div className="flex justify-end items-center mb-4 space-x-2">
-        <div className="relative">
+      <div className="flex flex-col sm:flex-row justify-end items-stretch sm:items-center mb-4 gap-2">
+        <div className="relative flex-grow sm:flex-grow-0">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Einträge suchen..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-8 w-64"
+            className="pl-8 w-full sm:w-64"
           />
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={() => openDialog()}>
+            <Button onClick={() => openDialog()} className="w-full sm:w-auto">
               <PlusCircle className="mr-2 h-4 w-4" /> Neuer Eintrag
             </Button>
           </DialogTrigger>
