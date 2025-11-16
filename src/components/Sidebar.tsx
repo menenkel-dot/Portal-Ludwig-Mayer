@@ -33,13 +33,24 @@ const settingsNavItems = [
     { href: "/users", icon: UserCog, label: "Benutzer", permission: "users", adminOnly: true },
 ]
 
-const Sidebar = () => {
+interface SidebarProps {
+  onLinkClick?: () => void;
+}
+
+const Sidebar = ({ onLinkClick }: SidebarProps) => {
   const { signOut, permissions, isAdmin } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
     await signOut();
+    if (onLinkClick) onLinkClick();
     navigate("/login");
+  };
+
+  const handleLinkClick = () => {
+    if (onLinkClick) {
+      onLinkClick();
+    }
   };
 
   const visibleNavItems = allNavItems.filter(item => isAdmin || permissions.includes(item.permission));
@@ -52,7 +63,7 @@ const Sidebar = () => {
 
 
   return (
-    <aside className="w-64 bg-white dark:bg-gray-800 flex flex-col border-r">
+    <aside className="w-64 bg-white dark:bg-gray-800 flex flex-col border-r h-full">
       <div className="p-4 border-b">
         <img src="/logo.png" alt="Logo" className="h-12" />
       </div>
@@ -61,6 +72,7 @@ const Sidebar = () => {
           <NavLink
             key={item.label}
             to={item.href}
+            onClick={handleLinkClick}
             className={({ isActive }) =>
               `flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                 isActive
@@ -79,6 +91,7 @@ const Sidebar = () => {
             <NavLink
                 key={item.label}
                 to={item.href}
+                onClick={handleLinkClick}
                 className={({ isActive }) =>
                 `flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors mb-1 ${
                     isActive
