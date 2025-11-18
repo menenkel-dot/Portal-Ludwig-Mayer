@@ -9,6 +9,7 @@ import { format } from "date-fns";
 import { SiteTimeEntries } from "@/components/SiteTimeEntries";
 import { SiteDocuments } from "@/components/SiteDocuments";
 import { SiteNotes } from "@/components/SiteNotes";
+import { SiteDailyReports } from "@/components/SiteDailyReports";
 
 const SiteDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -143,6 +144,7 @@ const SiteDetail = () => {
         </div>
       </div>
 
+      <SiteDailyReports siteId={site.id} />
       <SiteTimeEntries siteId={site.id} />
       <SiteDocuments siteId={site.id} />
       <SiteNotes siteId={site.id} />

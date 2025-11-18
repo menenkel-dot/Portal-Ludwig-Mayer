@@ -181,3 +181,31 @@ export type EmployeeAssignment = {
   employees?: Pick<Employee, 'id' | 'first_name' | 'last_name'>;
   sites?: Pick<Site, 'id' | 'name'>;
 };
+
+export type WeatherConditions = {
+  sun?: boolean;
+  rain?: boolean;
+  frost?: boolean;
+  wind?: boolean;
+  snow?: boolean;
+  temperature?: number | null;
+};
+
+export type WorkerCounts = {
+  [workerType: string]: number | null;
+};
+
+export type DailyConstructionReport = {
+  id: string;
+  site_id: string;
+  report_date: string;
+  weather_conditions: WeatherConditions | null;
+  worker_counts: WorkerCounts | null;
+  work_results: string | null;
+  obstacles: string | null;
+  scope_changes: string | null;
+  special_incidents: string | null;
+  created_by_user_id: string | null;
+  created_at: string;
+  updated_at: string;
+};
