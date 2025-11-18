@@ -158,24 +158,27 @@ export const EmployeeScheduling = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {rows.map(row => (
-                    <TableRow key={row.key}>
-                      <TableCell className="font-medium sticky left-0 bg-background z-10">{row.name}</TableCell>
-                      {Array.from({ length: TEAM_COUNT }, (_, i) => i + 1).map(teamNum => {
-                        const assignedEmployeeId = gridState[row.key]?.[teamNum] || null;
-                        const availableEmployees = employees?.filter(e => !assignedEmployeeIds.has(e.id) || e.id === assignedEmployeeId);
-                        return (
-                          <TableCell key={teamNum} className="p-1">
-                            <AssignmentCell
-                              employees={availableEmployees || []}
-                              value={assignedEmployeeId}
-                              onChange={(empId) => handleAssignmentChange(row.key, teamNum, empId)}
-                            />
-                          </TableCell>
-                        );
-                      })}
-                    </TableRow>
-                  ))}
+                  {rows.map((row, index) => {
+                    const isFirstActivity = row.type === 'activity' && (index === 0 || rows[index - 1].type === 'site');
+                    return (
+                      <TableRow key={row.key} className={cn(isFirstActivity && "border-t-4 border-border")}>
+                        <TableCell className="font-medium sticky left-0 bg-background z-10">{row.name}</TableCell>
+                        {Array.from({ length: TEAM_COUNT }, (_, i) => i + 1).map(teamNum => {
+                          const assignedEmployeeId = gridState[row.key]?.[teamNum] || null;
+                          const availableEmployees = employees?.filter(e => !assignedEmployeeIds.has(e.id) || e.id === assignedEmployeeId);
+                          return (
+                            <TableCell key={teamNum} className="p-1">
+                              <AssignmentCell
+                                employees={availableEmployees || []}
+                                value={assignedEmployeeId}
+                                onChange={(empId) => handleAssignmentChange(row.key, teamNum, empId)}
+                              />
+                            </TableCell>
+                          );
+                        })}
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
