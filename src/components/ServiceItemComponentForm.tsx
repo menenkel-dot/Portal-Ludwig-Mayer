@@ -76,7 +76,7 @@ export const ServiceItemComponentForm = ({ onSubmit, initialData, materials, onC
           render={({ field }) => (
             <FormItem>
               <FormLabel>Art der Komponente</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                 </FormControl>

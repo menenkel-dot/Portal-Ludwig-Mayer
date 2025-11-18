@@ -57,9 +57,17 @@ export const SiteForm = ({ onSubmit, initialData, customers, employees, onCancel
     },
   });
 
+  const handleValidSubmit = (data: NewSite) => {
+    const processedData = {
+      ...data,
+      construction_manager_id: data.construction_manager_id === '--none--' ? null : data.construction_manager_id,
+    };
+    onSubmit(processedData);
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(handleValidSubmit)} className="space-y-4">
         <FormField
           control={form.control}
           name="name"
@@ -80,7 +88,7 @@ export const SiteForm = ({ onSubmit, initialData, customers, employees, onCancel
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Kunde</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Kunde auswählen" />
@@ -104,14 +112,14 @@ export const SiteForm = ({ onSubmit, initialData, customers, employees, onCancel
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Bauführer</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
+                <Select onValueChange={field.onChange} value={field.value || ""}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Bauführer auswählen" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="">Kein Bauführer</SelectItem>
+                    <SelectItem value="--none--">Kein Bauführer</SelectItem>
                     {employees.map((employee) => (
                       <SelectItem key={employee.id} value={employee.id}>
                         {employee.first_name} {employee.last_name}
@@ -171,7 +179,7 @@ export const SiteForm = ({ onSubmit, initialData, customers, employees, onCancel
           render={({ field }) => (
             <FormItem>
               <FormLabel>Status</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue />

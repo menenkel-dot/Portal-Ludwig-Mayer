@@ -97,7 +97,7 @@ export const TimeEntryForm = ({ onSubmit, initialData, employees, sites, onCance
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Art des Eintrags</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                   </FormControl>
@@ -118,7 +118,7 @@ export const TimeEntryForm = ({ onSubmit, initialData, employees, sites, onCance
           render={({ field }) => (
             <FormItem>
               <FormLabel>Mitarbeiter</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger><SelectValue placeholder="Mitarbeiter auswählen" /></SelectTrigger>
                 </FormControl>
@@ -141,7 +141,7 @@ export const TimeEntryForm = ({ onSubmit, initialData, employees, sites, onCance
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Baustelle</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
+                <Select onValueChange={field.onChange} value={field.value || ""}>
                   <FormControl>
                     <SelectTrigger><SelectValue placeholder="Baustelle auswählen" /></SelectTrigger>
                   </FormControl>

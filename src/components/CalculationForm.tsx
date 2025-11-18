@@ -68,7 +68,7 @@ export const CalculationForm = ({ onSubmit, initialData, sites, onCancel, isLoad
           render={({ field }) => (
             <FormItem>
               <FormLabel>Zugehörige Baustelle</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Baustelle auswählen" />
