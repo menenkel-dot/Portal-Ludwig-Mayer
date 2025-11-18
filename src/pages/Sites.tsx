@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getSites, createSite, updateSite, deleteSite, NewSite } from "@/services/siteService";
 import { getCustomers } from "@/services/customerService";
+import { getEmployees } from "@/services/employeeService";
 import { Site } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,7 +51,7 @@ import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 
 type SortConfig = {
-  key: keyof Site;
+  key: keyof Site | 'employees';
   direction: 'ascending' | 'descending';
 } | null;
 
@@ -75,6 +76,11 @@ const Sites = () => {
     queryFn: getCustomers,
   });
 
+  const { data: employees, isLoading: isLoadingEmployees } = useQuery({
+    queryKey: ["employees"],
+    queryFn: getEmployees,
+  });
+
   const filteredSites = useMemo(() => {
     if (!sites) return [];
     const lowercasedTerm = searchTerm.toLowerCase();
@@ -93,6 +99,9 @@ const Sites = () => {
         if (sortConfig.key === 'customers') {
           valA = a.customers?.name || '';
           valB = b.customers?.name || '';
+        } else if (sortConfig.key === 'employees') {
+          valA = a.employees ? `${a.employees.last_name} ${a.employees.first_name}` : '';
+          valB = b.employees ? `${b.employees.last_name} ${b.employees.first_name}` : '';
         } else {
           valA = a[sortConfig.key];
           valB = b[sortConfig.key];
@@ -116,7 +125,7 @@ const Sites = () => {
     currentPage * ITEMS_PER_PAGE
   );
 
-  const requestSort = (key: keyof Site) => {
+  const requestSort = (key: keyof Site | 'employees') => {
     let direction: 'ascending' | 'descending' = 'ascending';
     if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
       direction = 'descending';
@@ -185,7 +194,7 @@ const Sites = () => {
     setIsAlertOpen(true);
   };
 
-  if (isLoadingSites || isLoadingCustomers) return <div>Lade Daten...</div>;
+  if (isLoadingSites || isLoadingCustomers || isLoadingEmployees) return <div>Lade Daten...</div>;
 
   return (
     <div>
@@ -213,11 +222,12 @@ const Sites = () => {
                   {selectedSite ? "Baustelle bearbeiten" : "Neue Baustelle anlegen"}
                 </DialogTitle>
               </DialogHeader>
-              {customers && (
+              {customers && employees && (
                 <SiteForm
                   onSubmit={handleFormSubmit}
                   initialData={selectedSite}
                   customers={customers}
+                  employees={employees}
                   onCancel={() => setIsDialogOpen(false)}
                   isLoading={createMutation.isPending || updateMutation.isPending}
                 />
@@ -239,6 +249,11 @@ const Sites = () => {
               <TableHead>
                 <Button variant="ghost" onClick={() => requestSort('customers')}>
                   Kunde <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => requestSort('employees')}>
+                  Bauführer <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
               </TableHead>
               <TableHead>
@@ -264,6 +279,7 @@ const Sites = () => {
                     </Link>
                   </TableCell>
                   <TableCell>{site.customers?.name || "N/A"}</TableCell>
+                  <TableCell>{site.employees ? `${site.employees.first_name} ${site.employees.last_name}` : "-"}</TableCell>
                   <TableCell>{new Date(site.start_date).toLocaleDateString()}</TableCell>
                   <TableCell>
                     <Badge variant={
@@ -296,7 +312,7 @@ const Sites = () => {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center">
+                <TableCell colSpan={6} className="h-24 text-center">
                   Keine Ergebnisse gefunden.
                 </TableCell>
               </TableRow>

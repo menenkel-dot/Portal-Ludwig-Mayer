@@ -19,13 +19,14 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Customer, Site } from "@/types";
+import { Customer, Site, Employee } from "@/types";
 import { NewSite } from "@/services/siteService";
 
 const formSchema = z.object({
   name: z.string().min(2, "Name muss mindestens 2 Zeichen lang sein."),
   address: z.string().min(5, "Adresse muss mindestens 5 Zeichen lang sein."),
   customer_id: z.string({ required_error: "Bitte einen Kunden auswählen." }),
+  construction_manager_id: z.string().optional().nullable(),
   start_date: z.string().min(1, "Startdatum ist erforderlich."),
   end_date: z.string().optional().nullable(),
   status: z.enum(["Geplant", "In Arbeit", "Abgeschlossen"]),
@@ -36,17 +37,19 @@ interface SiteFormProps {
   onSubmit: (data: NewSite) => void;
   initialData?: Site | null;
   customers: Customer[];
+  employees: Employee[];
   onCancel: () => void;
   isLoading: boolean;
 }
 
-export const SiteForm = ({ onSubmit, initialData, customers, onCancel, isLoading }: SiteFormProps) => {
+export const SiteForm = ({ onSubmit, initialData, customers, employees, onCancel, isLoading }: SiteFormProps) => {
   const form = useForm<NewSite>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: initialData?.name || "",
       address: initialData?.address || "",
       customer_id: initialData?.customer_id || "",
+      construction_manager_id: initialData?.construction_manager_id || null,
       start_date: initialData?.start_date ? new Date(initialData.start_date).toISOString().split('T')[0] : "",
       end_date: initialData?.end_date ? new Date(initialData.end_date).toISOString().split('T')[0] : null,
       status: initialData?.status || "Geplant",
@@ -70,30 +73,57 @@ export const SiteForm = ({ onSubmit, initialData, customers, onCancel, isLoading
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="customer_id"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Kunde</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Kunde auswählen" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {customers.map((customer) => (
-                    <SelectItem key={customer.id} value={customer.id}>
-                      {customer.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="customer_id"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Kunde</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Kunde auswählen" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {customers.map((customer) => (
+                      <SelectItem key={customer.id} value={customer.id}>
+                        {customer.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="construction_manager_id"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Bauführer</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Bauführer auswählen" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="">Kein Bauführer</SelectItem>
+                    {employees.map((employee) => (
+                      <SelectItem key={employee.id} value={employee.id}>
+                        {employee.first_name} {employee.last_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
         <FormField
           control={form.control}
           name="address"

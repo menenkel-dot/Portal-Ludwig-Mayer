@@ -15,6 +15,7 @@ export type Site = {
   name: string;
   address: string;
   customer_id: string;
+  construction_manager_id: string | null;
   start_date: string;
   end_date: string | null;
   status: 'Geplant' | 'In Arbeit' | 'Abgeschlossen';
@@ -26,6 +27,11 @@ export type Site = {
     contact_person?: string;
     email?: string;
     phone?: string;
+  } | null;
+  employees: {
+      id: string;
+      first_name: string;
+      last_name: string;
   } | null;
 };
 

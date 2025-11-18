@@ -1,12 +1,12 @@
 import { supabase } from '@/lib/supabase';
 import { Site } from '@/types';
 
-export type NewSite = Omit<Site, 'id' | 'created_at' | 'customers'>;
+export type NewSite = Omit<Site, 'id' | 'created_at' | 'customers' | 'employees'>;
 
 export const getSites = async (): Promise<Site[]> => {
   const { data, error } = await supabase
     .from('sites')
-    .select('*, customers(id, name)')
+    .select('*, customers(id, name), employees(id, first_name, last_name)')
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -19,7 +19,7 @@ export const getSites = async (): Promise<Site[]> => {
 export const getSiteById = async (id: string): Promise<Site | null> => {
   const { data, error } = await supabase
     .from('sites')
-    .select('*, customers(*)') // Fetch all customer data
+    .select('*, customers(*), employees(id, first_name, last_name)') // Fetch all customer data
     .eq('id', id)
     .single();
 
