@@ -60,41 +60,38 @@ export const SiteDailyReports = ({ siteId }: SiteDailyReportsProps) => {
           Tägliche Dokumentation des Baufortschritts. Wählen Sie ein Datum aus, um einen Bericht anzuzeigen oder zu erstellen.
         </CardDescription>
       </CardHeader>
-      <CardContent className="grid md:grid-cols-3 gap-6">
-        <div className="md:col-span-1">
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant={"outline"} className="w-full justify-start text-left font-normal">
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {date ? format(date, "PPP", { locale: de }) : <span>Datum auswählen</span>}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
-              <Calendar
-                mode="single"
-                selected={date}
-                onSelect={setDate}
-                initialFocus
-                locale={de}
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
-        <div className="md:col-span-2">
-          {isLoading ? (
-            <Skeleton className="h-[400px] w-full" />
-          ) : isError ? (
-            <p className="text-destructive">Fehler beim Laden des Berichts.</p>
-          ) : (
-            <DailyReportForm
-              key={reportDate} // Re-mount form when date changes
-              initialData={report}
-              onSubmit={handleSubmit}
-              isLoading={mutation.isPending}
-              reportDate={date ? format(date, "eeee, dd.MM.yyyy", { locale: de }) : ""}
+      <CardContent className="space-y-4">
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant={"outline"} className="w-full md:w-auto justify-start text-left font-normal">
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {date ? format(date, "PPP", { locale: de }) : <span>Datum auswählen</span>}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0">
+            <Calendar
+              mode="single"
+              selected={date}
+              onSelect={setDate}
+              initialFocus
+              locale={de}
             />
-          )}
-        </div>
+          </PopoverContent>
+        </Popover>
+        
+        {isLoading ? (
+          <Skeleton className="h-[400px] w-full" />
+        ) : isError ? (
+          <p className="text-destructive">Fehler beim Laden des Berichts.</p>
+        ) : (
+          <DailyReportForm
+            key={reportDate} // Re-mount form when date changes
+            initialData={report}
+            onSubmit={handleSubmit}
+            isLoading={mutation.isPending}
+            reportDate={date ? format(date, "eeee, dd.MM.yyyy", { locale: de }) : ""}
+          />
+        )}
       </CardContent>
     </Card>
   );
