@@ -23,6 +23,7 @@ const permissionsList = [
   { id: 'fleet', label: 'Fuhrpark' },
   { id: 'materials', label: 'Materialien' },
   { id: 'calculations', label: 'Kalkulation' },
+  { id: 'service-catalog', label: 'Leistungskatalog' },
   { id: 'time-tracking', label: 'Zeiterfassung' },
   { id: 'reports', label: 'Reports' },
   { id: 'settings', label: 'Einstellungen' },

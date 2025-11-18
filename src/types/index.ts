@@ -140,3 +140,25 @@ export type SiteNote = {
   created_at: string;
   site_note_attachments: SiteNoteAttachment[];
 };
+
+export type ServiceItemComponent = {
+  id: string;
+  service_item_id: string;
+  material_id: string | null;
+  description: string;
+  quantity: number;
+  unit: string | null;
+  unit_price: number;
+  type: 'Material' | 'Lohn' | 'Sonstiges';
+  created_at: string;
+  materials?: { name: string } | null;
+};
+
+export type ServiceItem = {
+  id: string;
+  name: string;
+  description: string | null;
+  unit: string | null;
+  created_at: string;
+  service_item_components: ServiceItemComponent[];
+};
