@@ -145,9 +145,9 @@ const SiteDetail = () => {
         </div>
       </div>
 
-      <SiteRegieReports siteId={site.id} />
       <SiteDailyReports siteId={site.id} />
       <SiteTimeEntries siteId={site.id} />
+      <SiteRegieReports siteId={site.id} />
       <SiteDocuments siteId={site.id} />
       <SiteNotes siteId={site.id} />
     </div>
