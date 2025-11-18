@@ -52,6 +52,7 @@ export type Employee = {
   hourly_rate: number;
   created_at: string;
   time_entries?: (TimeEntry & { sites: { id: string; name: string } | null })[];
+  employee_assignments?: EmployeeAssignment[];
 };
 
 export type TimeEntry = {
@@ -161,4 +162,16 @@ export type ServiceItem = {
   unit: string | null;
   created_at: string;
   service_item_components: ServiceItemComponent[];
+};
+
+export type EmployeeAssignment = {
+  id: string;
+  employee_id: string;
+  site_id: string | null;
+  activity: string | null;
+  week_start_date: string;
+  team_number: number | null;
+  created_at: string;
+  employees?: Pick<Employee, 'id' | 'first_name' | 'last_name'>;
+  sites?: Pick<Site, 'id' | 'name'>;
 };
