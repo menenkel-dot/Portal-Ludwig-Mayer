@@ -24,9 +24,9 @@ const allNavItems = [
   { href: "/sites", icon: Building, label: "Baustellen", permission: "sites" },
   { href: "/fleet", icon: Truck, label: "Fuhrpark", permission: "fleet" },
   { href: "/materials", icon: Box, label: "Materialien", permission: "materials" },
-  { href: "/calculations", icon: Calculator, label: "Kalkulation", permission: "calculations" },
   { href: "/service-catalog", icon: ClipboardList, label: "Leistungskatalog", permission: "service-catalog" },
   { href: "/time-tracking", icon: Clock, label: "Zeiterfassung", permission: "time-tracking" },
+  { href: "/calculations", icon: Calculator, label: "Kalkulation", permission: "calculations" },
   { href: "/reports", icon: FileText, label: "Reports", permission: "reports" },
 ];
 
