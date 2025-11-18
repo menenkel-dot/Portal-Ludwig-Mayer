@@ -4,6 +4,7 @@ import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { getOrCreateRegieReportForWeek, updateRegieReport } from "@/services/regieReportService";
+import { getSiteById } from "@/services/siteService";
 import { Employee, RegieReport } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,9 +57,15 @@ export const RegieReportForm = ({ siteId, reportId, employees, onClose }: RegieR
   const weekNumber = getWeek(new Date(), { weekStartsOn: 1 });
   const year = getYear(new Date());
 
-  const { data: report, isLoading } = useQuery({
+  const { data: report, isLoading: isLoadingReport } = useQuery({
     queryKey: ["regieReport", reportId || `new-${siteId}-${weekNumber}-${year}`],
     queryFn: () => getOrCreateRegieReportForWeek(siteId, weekNumber, year),
+  });
+
+  const { data: site, isLoading: isLoadingSite } = useQuery({
+    queryKey: ["site", siteId],
+    queryFn: () => getSiteById(siteId),
+    enabled: !!siteId,
   });
 
   const form = useForm<FormData>({
@@ -96,14 +103,16 @@ export const RegieReportForm = ({ siteId, reportId, employees, onClose }: RegieR
     return Array.from({ length: 5 }).map((_, i) => addDays(start, i));
   }, []);
 
-  if (isLoading) return <div>Lade Bericht...</div>;
-  if (!report) return <div>Fehler beim Laden des Berichts.</div>;
+  const isLoading = isLoadingReport || isLoadingSite;
+
+  if (isLoading) return <div>Lade Daten...</div>;
+  if (!report || !site) return <div>Fehler beim Laden der Daten.</div>;
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit((data) => mutation.mutate(data))} className="space-y-6">
         <div className="grid grid-cols-3 gap-4 text-sm">
-          <div><span className="font-semibold">Bauvorhaben:</span> {report.site_id}</div>
+          <div><span className="font-semibold">Bauvorhaben:</span> {site.name}, {site.address}</div>
           <div><span className="font-semibold">KW:</span> {report.week_number}</div>
           <div><span className="font-semibold">Datum:</span> {format(weekDays[0], 'dd.MM.yyyy')} - {format(weekDays[4], 'dd.MM.yyyy')}</div>
         </div>
