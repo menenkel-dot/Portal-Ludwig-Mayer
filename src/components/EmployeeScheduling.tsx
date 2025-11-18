@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 import { Skeleton } from "./ui/skeleton";
 
 const STATIC_ACTIVITIES = ["Urlaub", "Krank", "Lager", "Fahrer"];
-const TEAM_COUNT = 5;
+const TEAM_COUNT = 8;
 
 type GridState = Record<string, Record<number, string | null>>; // { [rowKey]: { [teamNumber]: employeeId } }
 
@@ -153,7 +153,7 @@ export const EmployeeScheduling = () => {
                   <TableRow>
                     <TableHead className="w-[200px] sticky left-0 bg-background z-10">Baustelle / Tätigkeit</TableHead>
                     {Array.from({ length: TEAM_COUNT }, (_, i) => i + 1).map(teamNum => (
-                      <TableHead key={teamNum} className="text-center min-w-[180px]">Team {teamNum}</TableHead>
+                      <TableHead key={teamNum} className="text-center min-w-[180px]">{teamNum}</TableHead>
                     ))}
                   </TableRow>
                 </TableHeader>
