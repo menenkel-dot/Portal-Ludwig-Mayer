@@ -3,13 +3,13 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getEmployees } from "@/services/employeeService";
 import { getSites } from "@/services/siteService";
 import { getAssignmentsForWeek, upsertAssignments, deleteAssignments, UpsertPayload } from "@/services/employeeAssignmentService";
-import { Employee, Site, EmployeeAssignment } from "@/types";
+import { Employee } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ChevronLeft, ChevronRight, Check, ChevronsUpDown, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Check, ChevronsUpDown, X, Plus } from "lucide-react";
 import { startOfWeek, addWeeks, subWeeks, format } from "date-fns";
 import { de } from "date-fns/locale";
 import { showSuccess, showError } from "@/utils/toast";
@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 import { Skeleton } from "./ui/skeleton";
 
 const STATIC_ACTIVITIES = ["Urlaub", "Krank", "Lager", "Fahrer"];
-const TEAM_COUNT = 8;
+const TEAM_COUNT = 5;
 
 type GridState = Record<string, Record<number, string | null>>; // { [rowKey]: { [teamNumber]: employeeId } }
 
@@ -153,7 +153,7 @@ export const EmployeeScheduling = () => {
                   <TableRow>
                     <TableHead className="w-[200px] sticky left-0 bg-background z-10">Baustelle / Tätigkeit</TableHead>
                     {Array.from({ length: TEAM_COUNT }, (_, i) => i + 1).map(teamNum => (
-                      <TableHead key={teamNum} className="text-center min-w-[200px]">Team {teamNum}</TableHead>
+                      <TableHead key={teamNum} className="text-center min-w-[180px]">Team {teamNum}</TableHead>
                     ))}
                   </TableRow>
                 </TableHeader>
@@ -165,7 +165,7 @@ export const EmployeeScheduling = () => {
                         const assignedEmployeeId = gridState[row.key]?.[teamNum] || null;
                         const availableEmployees = employees?.filter(e => !assignedEmployeeIds.has(e.id) || e.id === assignedEmployeeId);
                         return (
-                          <TableCell key={teamNum}>
+                          <TableCell key={teamNum} className="p-1">
                             <AssignmentCell
                               employees={availableEmployees || []}
                               value={assignedEmployeeId}
@@ -195,38 +195,55 @@ const AssignmentCell = ({ employees, value, onChange }: { employees: Employee[],
   const [open, setOpen] = useState(false);
   const selectedEmployee = employees.find(e => e.id === value);
 
+  const popoverContent = (
+    <PopoverContent className="w-[220px] p-0">
+      <Command>
+        <CommandInput placeholder="Suchen..." />
+        <CommandList>
+          <CommandEmpty>Kein Mitarbeiter gefunden.</CommandEmpty>
+          <CommandGroup>
+            {employees.map(employee => (
+              <CommandItem
+                key={employee.id}
+                value={`${employee.first_name} ${employee.last_name}`}
+                onSelect={() => { onChange(employee.id); setOpen(false); }}
+              >
+                <Check className={cn("mr-2 h-4 w-4", value === employee.id ? "opacity-100" : "opacity-0")} />
+                {employee.last_name}, {employee.first_name}
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        </CommandList>
+      </Command>
+    </PopoverContent>
+  );
+
+  if (selectedEmployee) {
+    return (
+      <div className="flex items-center justify-between p-1 rounded-md bg-secondary text-secondary-foreground h-9">
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <span className="text-sm font-medium cursor-pointer truncate flex-1 px-2 hover:underline">
+              {selectedEmployee.last_name}, {selectedEmployee.first_name.charAt(0)}.
+            </span>
+          </PopoverTrigger>
+          {popoverContent}
+        </Popover>
+        <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0 rounded-full" onClick={() => onChange(null)}>
+          <X className="h-3 w-3" />
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" role="combobox" className="w-full justify-between">
-          {selectedEmployee ? `${selectedEmployee.last_name}, ${selectedEmployee.first_name}` : "Mitarbeiter wählen"}
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        <Button variant="ghost" size="sm" className="w-full h-9">
+          <Plus className="h-4 w-4 text-muted-foreground" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[200px] p-0">
-        <Command>
-          <CommandInput placeholder="Suchen..." />
-          <CommandList>
-            <CommandEmpty>Kein Mitarbeiter gefunden.</CommandEmpty>
-            <CommandGroup>
-              <CommandItem onSelect={() => { onChange(null); setOpen(false); }}>
-                <X className="mr-2 h-4 w-4 text-destructive" />
-                <span className="text-destructive">Zuweisung aufheben</span>
-              </CommandItem>
-              {employees.map(employee => (
-                <CommandItem
-                  key={employee.id}
-                  value={`${employee.first_name} ${employee.last_name}`}
-                  onSelect={() => { onChange(employee.id); setOpen(false); }}
-                >
-                  <Check className={cn("mr-2 h-4 w-4", value === employee.id ? "opacity-100" : "opacity-0")} />
-                  {employee.last_name}, {employee.first_name}
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
+      {popoverContent}
     </Popover>
   );
 };
