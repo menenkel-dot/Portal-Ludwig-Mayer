@@ -191,8 +191,13 @@ export type WeatherConditions = {
   temperature?: number | null;
 };
 
+export type WorkerCountDetail = {
+  count?: number | null;
+  hours?: number | null;
+};
+
 export type WorkerCounts = {
-  [workerType: string]: number | null;
+  [workerType: string]: WorkerCountDetail | null;
 };
 
 export type DailyConstructionReport = {

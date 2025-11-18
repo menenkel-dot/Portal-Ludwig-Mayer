@@ -11,10 +11,9 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
 } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DailyConstructionReport } from "@/types";
+import { DailyConstructionReport, WorkerCounts } from "@/types";
 import { UpsertReportPayload } from "@/services/dailyReportService";
 
 const formSchema = z.object({
@@ -26,7 +25,10 @@ const formSchema = z.object({
     snow: z.boolean().optional(),
     temperature: z.coerce.number().optional().nullable(),
   }).optional().nullable(),
-  worker_counts: z.record(z.coerce.number().optional().nullable()).optional().nullable(),
+  worker_counts: z.record(z.object({
+    count: z.coerce.number().optional().nullable(),
+    hours: z.coerce.number().optional().nullable(),
+  })).optional().nullable(),
   work_results: z.string().optional().nullable(),
   obstacles: z.string().optional().nullable(),
   scope_changes: z.string().optional().nullable(),
@@ -56,12 +58,31 @@ const workerTypes = [
   { key: "fremdfirmen", label: "Fremdfirmen" },
 ];
 
+const transformWorkerCounts = (counts: any): WorkerCounts => {
+  if (!counts) return {};
+  const newCounts: WorkerCounts = {};
+  for (const key in counts) {
+    const value = counts[key];
+    if (typeof value === 'number') {
+      // Handle old format (number represents hours)
+      newCounts[key] = { count: null, hours: value };
+    } else if (typeof value === 'object' && value !== null) {
+      // Handle new format
+      newCounts[key] = {
+        count: value.count ?? null,
+        hours: value.hours ?? null,
+      };
+    }
+  }
+  return newCounts;
+};
+
 export const DailyReportForm = ({ initialData, onSubmit, isLoading, reportDate }: DailyReportFormProps) => {
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       weather_conditions: initialData?.weather_conditions || { temperature: null },
-      worker_counts: initialData?.worker_counts || {},
+      worker_counts: transformWorkerCounts(initialData?.worker_counts),
       work_results: initialData?.work_results || "",
       obstacles: initialData?.obstacles || "",
       scope_changes: initialData?.scope_changes || "",
@@ -105,20 +126,32 @@ export const DailyReportForm = ({ initialData, onSubmit, isLoading, reportDate }
         </Card>
 
         <Card>
-          <CardHeader><CardTitle className="text-base">Anzahl der beschäftigten Arbeiter (Stunden)</CardTitle></CardHeader>
-          <CardContent className="grid grid-cols-2 gap-x-6 gap-y-4">
+          <CardHeader><CardTitle className="text-base">Anzahl der beschäftigten Arbeiter</CardTitle></CardHeader>
+          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
             {workerTypes.map(worker => (
-              <FormField
-                key={worker.key}
-                control={form.control}
-                name={`worker_counts.${worker.key}`}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{worker.label}</FormLabel>
-                    <FormControl><Input type="number" step="0.5" {...field} value={field.value ?? ''} /></FormControl>
-                  </FormItem>
-                )}
-              />
+              <div key={worker.key} className="space-y-2">
+                <FormLabel>{worker.label}</FormLabel>
+                <div className="flex gap-2">
+                  <FormField
+                    control={form.control}
+                    name={`worker_counts.${worker.key}.count`}
+                    render={({ field }) => (
+                      <FormItem className="flex-1">
+                        <FormControl><Input type="number" placeholder="Anzahl" {...field} value={field.value ?? ''} /></FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name={`worker_counts.${worker.key}.hours`}
+                    render={({ field }) => (
+                      <FormItem className="flex-1">
+                        <FormControl><Input type="number" step="0.5" placeholder="Stunden" {...field} value={field.value ?? ''} /></FormControl>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
             ))}
           </CardContent>
         </Card>
