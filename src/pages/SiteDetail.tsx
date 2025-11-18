@@ -10,6 +10,7 @@ import { SiteTimeEntries } from "@/components/SiteTimeEntries";
 import { SiteDocuments } from "@/components/SiteDocuments";
 import { SiteNotes } from "@/components/SiteNotes";
 import { SiteDailyReports } from "@/components/SiteDailyReports";
+import { SiteRegieReports } from "@/components/SiteRegieReports";
 
 const SiteDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -144,6 +145,7 @@ const SiteDetail = () => {
         </div>
       </div>
 
+      <SiteRegieReports siteId={site.id} />
       <SiteDailyReports siteId={site.id} />
       <SiteTimeEntries siteId={site.id} />
       <SiteDocuments siteId={site.id} />

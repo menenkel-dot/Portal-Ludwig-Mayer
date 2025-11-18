@@ -214,3 +214,40 @@ export type DailyConstructionReport = {
   created_at: string;
   updated_at: string;
 };
+
+export type RegieReportEmployeeHour = {
+  employee_id: string;
+  hours: {
+    mon: number | null;
+    tue: number | null;
+    wed: number | null;
+    thu: number | null;
+    fri: number | null;
+  };
+};
+
+export type RegieReportWorkDescription = {
+  id: string;
+  description: string;
+};
+
+export type RegieReportMaterial = {
+  id: string;
+  quantity: number | null;
+  unit: string;
+  description: string;
+  unit_price: number | null;
+};
+
+export type RegieReport = {
+  id: string;
+  site_id: string;
+  week_number: number;
+  year: number;
+  status: string;
+  employee_hours: RegieReportEmployeeHour[] | null;
+  work_descriptions: RegieReportWorkDescription[] | null;
+  materials: RegieReportMaterial[] | null;
+  created_at: string;
+  updated_at: string;
+};
