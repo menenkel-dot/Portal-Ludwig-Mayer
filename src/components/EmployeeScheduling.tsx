@@ -21,7 +21,7 @@ const TEAM_COUNT = 8;
 
 type GridState = Record<string, Record<number, string | null>>; // { [rowKey]: { [teamNumber]: employeeId } }
 
-const EmployeeScheduling = () => {
+export const EmployeeScheduling = () => {
   const queryClient = useQueryClient();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [gridState, setGridState] = useState<GridState>({});
