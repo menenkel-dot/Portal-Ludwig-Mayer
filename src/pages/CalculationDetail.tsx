@@ -15,6 +15,7 @@ import { CalculationItemForm } from "@/components/CalculationItemForm";
 import { CalculationSummary } from "@/components/CalculationSummary";
 import { showSuccess, showError } from "@/utils/toast";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { cn } from "@/lib/utils";
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(amount);
 
@@ -36,21 +37,22 @@ const CalculationDetail = () => {
   const { data: materials, isLoading: isLoadingMaterials } = useQuery({ queryKey: ["materials"], queryFn: getMaterials });
   const { data: serviceItems, isLoading: isLoadingServiceItems } = useQuery({ queryKey: ["serviceItems"], queryFn: getServiceItems });
 
-  const { itemsHierarchy, totalAmount } = useMemo(() => {
-    if (!items) return { itemsHierarchy: [], totalAmount: 0 };
+  const itemsHierarchy = useMemo(() => {
+    if (!items) return [];
     const itemMap = new Map(items.map(item => [item.id, { ...item, children: [] as CalculationItem[] }]));
     const topLevelItems: (CalculationItem & { children: CalculationItem[] })[] = [];
-    let total = 0;
 
     items.forEach(item => {
       if (item.parent_item_id) {
-        itemMap.get(item.parent_item_id)?.children.push(item);
+        const parent = itemMap.get(item.parent_item_id);
+        if (parent) {
+          parent.children.push(item);
+        }
       } else {
         topLevelItems.push(itemMap.get(item.id)!);
-        total += item.total_price;
       }
     });
-    return { itemsHierarchy: topLevelItems, totalAmount };
+    return topLevelItems;
   }, [items]);
 
   const mutationOptions = {
