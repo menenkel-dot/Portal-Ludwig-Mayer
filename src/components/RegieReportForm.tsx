@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Trash2, PlusCircle } from "lucide-react";
-import { getWeek, getYear, startOfWeek, addDays, format } from "date-fns";
+import { startOfWeek, addDays, format, setWeek, setYear } from "date-fns";
 import { de } from "date-fns/locale";
 import { showSuccess, showError } from "@/utils/toast";
 import { v4 as uuidv4 } from 'uuid';
@@ -48,14 +48,14 @@ type FormData = z.infer<typeof formSchema>;
 interface RegieReportFormProps {
   siteId: string;
   reportId: string | null;
+  weekNumber: number;
+  year: number;
   employees: Employee[];
   onClose: () => void;
 }
 
-export const RegieReportForm = ({ siteId, reportId, employees, onClose }: RegieReportFormProps) => {
+export const RegieReportForm = ({ siteId, reportId, weekNumber, year, employees, onClose }: RegieReportFormProps) => {
   const queryClient = useQueryClient();
-  const weekNumber = getWeek(new Date(), { weekStartsOn: 1 });
-  const year = getYear(new Date());
 
   const { data: report, isLoading: isLoadingReport } = useQuery({
     queryKey: ["regieReport", reportId || `new-${siteId}-${weekNumber}-${year}`],
@@ -98,10 +98,12 @@ export const RegieReportForm = ({ siteId, reportId, employees, onClose }: RegieR
   });
 
   const employeeMap = useMemo(() => new Map(employees.map(e => [e.id, `${e.first_name} ${e.last_name}`])), [employees]);
+  
   const weekDays = useMemo(() => {
-    const start = startOfWeek(new Date(), { weekStartsOn: 1 });
+    const dateForWeek = setWeek(setYear(new Date(), year), weekNumber, { weekStartsOn: 1 });
+    const start = startOfWeek(dateForWeek, { weekStartsOn: 1 });
     return Array.from({ length: 5 }).map((_, i) => addDays(start, i));
-  }, []);
+  }, [weekNumber, year]);
 
   const isLoading = isLoadingReport || isLoadingSite;
 
