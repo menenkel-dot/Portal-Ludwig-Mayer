@@ -94,7 +94,9 @@ export type CalculationItem = {
   total_price: number;
   created_at: string;
   material_id: string | null;
+  service_item_id: string | null;
   materials: { name: string } | null;
+  service_items?: { name: string } | null;
 };
 
 export type Material = {

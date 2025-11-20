@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getCalculations } from "@/services/calculationService";
 import { getCalculationItems, createCalculationItem, updateCalculationItem, deleteCalculationItem, NewCalculationItem } from "@/services/calculationItemService";
 import { getMaterials } from "@/services/materialService";
+import { getServiceItems } from "@/services/serviceCatalogService";
 import { CalculationItem } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,6 +34,11 @@ const CalculationDetail = () => {
   const { data: materials, isLoading: isLoadingMaterials } = useQuery({
     queryKey: ["materials"],
     queryFn: getMaterials,
+  });
+
+  const { data: serviceItems, isLoading: isLoadingServiceItems } = useQuery({
+    queryKey: ["serviceItems"],
+    queryFn: getServiceItems,
   });
 
   const mutationOptions = {
@@ -122,11 +128,12 @@ const CalculationDetail = () => {
                 <DialogHeader>
                   <DialogTitle>{selectedItem ? "Posten bearbeiten" : "Neuen Posten hinzufügen"}</DialogTitle>
                 </DialogHeader>
-                {!isLoadingMaterials && materials && (
+                {!isLoadingMaterials && materials && !isLoadingServiceItems && serviceItems && (
                   <CalculationItemForm
                     onSubmit={handleFormSubmit}
                     initialData={selectedItem}
                     materials={materials}
+                    serviceItems={serviceItems}
                     onCancel={() => setIsDialogOpen(false)}
                     isLoading={createMutation.isPending || updateMutation.isPending}
                   />
@@ -157,6 +164,11 @@ const CalculationDetail = () => {
                         {item.material_id && (
                           <p className="text-xs text-muted-foreground">
                             aus Materialkatalog
+                          </p>
+                        )}
+                        {item.service_item_id && (
+                          <p className="text-xs text-muted-foreground">
+                            aus Leistungskatalog
                           </p>
                         )}
                       </TableCell>
