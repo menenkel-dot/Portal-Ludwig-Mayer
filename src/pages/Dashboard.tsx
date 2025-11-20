@@ -50,6 +50,7 @@ const Dashboard = () => {
 
   // Memoized data processing
   const employeeMap = useMemo(() => new Map(employees?.map(e => [e.id, `${e.first_name} ${e.last_name}`])), [employees]);
+  
   const stats = useMemo(() => {
     const activeSites = sites?.filter((site) => site.status === "In Arbeit").length || 0;
     const availableVehicles = vehicles?.filter((vehicle) => vehicle.status === "Verfügbar").length || 0;
@@ -64,6 +65,27 @@ const Dashboard = () => {
       { title: "Fahrzeuge verfügbar", value: availableVehicles, icon: Truck, permission: 'fleet' },
     ];
   }, [sites, vehicles, timeEntries]);
+
+  const weeklyHoursData = useMemo(() => {
+    if (!timeEntries) return [];
+    const last7Days = Array.from({ length: 7 }).map((_, i) => subDays(new Date(), i)).reverse();
+    return last7Days.map(day => ({
+      name: format(day, "EEE", { locale: de }),
+      Stunden: parseFloat(timeEntries.filter(entry => entry.date.startsWith(format(day, "yyyy-MM-dd")) && entry.entry_type === 'Arbeit').reduce((sum, entry) => sum + entry.hours_worked, 0).toFixed(1)),
+    }));
+  }, [timeEntries]);
+
+  const recentActivitiesData = useMemo(() => 
+    timeEntries?.slice(0, 5).map(entry => ({ 
+      ...entry, 
+      employeeName: employeeMap.get(entry.employee_id) || "Unbekannt", 
+      siteName: entry.sites?.name || "N/A" 
+    })) || [], 
+  [timeEntries, employeeMap]);
+
+  const activeProjectsData = useMemo(() => 
+    sites?.filter(site => site.status === "In Arbeit") || [], 
+  [sites]);
 
   // Widget Definitions
   const allWidgets = [
@@ -97,14 +119,7 @@ const Dashboard = () => {
           <CardContent className="pl-2 h-[300px]">
             {isLoadingTimeEntries ? <Skeleton className="h-full w-full" /> : (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={useMemo(() => {
-                  if (!timeEntries) return [];
-                  const last7Days = Array.from({ length: 7 }).map((_, i) => subDays(new Date(), i)).reverse();
-                  return last7Days.map(day => ({
-                    name: format(day, "EEE", { locale: de }),
-                    Stunden: parseFloat(timeEntries.filter(entry => entry.date.startsWith(format(day, "yyyy-MM-dd")) && entry.entry_type === 'Arbeit').reduce((sum, entry) => sum + entry.hours_worked, 0).toFixed(1)),
-                  }));
-                }, [timeEntries])}>
+                <BarChart data={weeklyHoursData}>
                   <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
                   <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}h`} />
                   <Tooltip cursor={{ fill: 'rgba(241, 245, 249, 0.5)' }} contentStyle={{ background: "white", border: "1px solid #e2e8f0", borderRadius: "0.5rem" }} />
@@ -126,7 +141,7 @@ const Dashboard = () => {
           <CardContent>
             {isLoadingTimeEntries ? <Skeleton className="h-[300px] w-full" /> : (
               <div className="space-y-4">
-                {useMemo(() => timeEntries?.slice(0, 5).map(entry => ({ ...entry, employeeName: employeeMap.get(entry.employee_id) || "Unbekannt", siteName: entry.sites?.name || "N/A" })), [timeEntries, employeeMap]).map(activity => (
+                {recentActivitiesData.map(activity => (
                   <div key={activity.id} className="flex items-center">
                     <Avatar className="h-9 w-9"><AvatarFallback>{activity.employeeName.charAt(0)}</AvatarFallback></Avatar>
                     <div className="ml-4 space-y-1"><p className="text-sm font-medium leading-none">{activity.employeeName}</p><p className="text-sm text-muted-foreground">{activity.siteName}</p></div>
@@ -151,7 +166,7 @@ const Dashboard = () => {
               <Table>
                 <TableHeader><TableRow><TableHead>Baustelle</TableHead><TableHead>Kunde</TableHead><TableHead>Startdatum</TableHead></TableRow></TableHeader>
                 <TableBody>
-                  {useMemo(() => sites?.filter(site => site.status === "In Arbeit") || [], [sites]).map(project => (
+                  {activeProjectsData.map(project => (
                     <TableRow key={project.id}>
                       <TableCell className="font-medium"><Link to={`/sites/${project.id}`} className="hover:underline">{project.name}</Link></TableCell>
                       <TableCell>{project.customers ? <Link to={`/customers/${project.customers.id}`} className="hover:underline">{project.customers.name}</Link> : "N/A"}</TableCell>
