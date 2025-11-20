@@ -102,22 +102,50 @@
 
 @layer utilities {
   @media print {
-    .no-print {
+    .no-print,
+    div[data-radix-dialog-overlay],
+    div[data-radix-dialog-content] > button /* Close button */ {
       display: none !important;
     }
+
     body {
-      background-color: white !important;
+      background: white !important;
     }
+
     @page {
-      size: auto;
-      margin: 0.5in;
+      size: A4;
+      margin: 2cm;
     }
-    /* Ensure the dialog content takes up the full page */
+
+    /* Hide the main application content, assuming the dialog is in a portal */
+    body > div#root {
+      display: none;
+    }
+
+    /* Reset dialog content styles to act like a normal page */
+    div[data-radix-dialog-content] {
+      position: static !important;
+      width: 100% !important;
+      max-width: none !important;
+      height: auto !important;
+      max-height: none !important;
+      overflow: visible !important;
+      box-shadow: none !important;
+      border: none !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      animation: none !important;
+    }
+
+    /* Hide the dialog title ("Regiebericht bearbeiten") */
+    div[data-radix-dialog-content] > div > h2 {
+      display: none;
+    }
+
+    /* Ensure our printable area flows naturally */
     #regie-report-printable-area {
-      position: absolute;
-      left: 0;
-      top: 0;
-      width: 100%;
+      position: static !important;
+      width: auto !important;
       border: none !important;
       box-shadow: none !important;
     }
