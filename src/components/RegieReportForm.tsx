@@ -13,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trash2, PlusCircle } from "lucide-react";
+import { Trash2, PlusCircle, Printer } from "lucide-react";
 import { startOfWeek, addDays, format, setWeek, setYear } from "date-fns";
 import { de } from "date-fns/locale";
 import { showSuccess, showError } from "@/utils/toast";
@@ -113,92 +113,112 @@ export const RegieReportForm = ({ siteId, reportId, weekNumber, year, employees,
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit((data) => mutation.mutate(data))} className="space-y-6">
-        <div className="grid grid-cols-3 gap-4 text-sm">
-          <div><span className="font-semibold">Bauvorhaben:</span> {site.name}, {site.address}</div>
-          <div><span className="font-semibold">KW:</span> {report.week_number}</div>
-          <div><span className="font-semibold">Datum:</span> {format(weekDays[0], 'dd.MM.yyyy')} - {format(weekDays[4], 'dd.MM.yyyy')}</div>
+        <div id="regie-report-printable-area">
+          <div className="grid grid-cols-3 gap-4 text-sm mb-6">
+            <div><span className="font-semibold">Bauvorhaben:</span> {site.name}, {site.address}</div>
+            <div><span className="font-semibold">KW:</span> {report.week_number}</div>
+            <div><span className="font-semibold">Datum:</span> {format(weekDays[0], 'dd.MM.yyyy')} - {format(weekDays[4], 'dd.MM.yyyy')}</div>
+          </div>
+
+          {/* Employee Hours */}
+          <Card>
+            <CardHeader><CardTitle className="text-base">Mitarbeiterstunden</CardTitle></CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[250px]">Name</TableHead>
+                    {weekDays.map(day => <TableHead key={day.toISOString()} className="text-center">{format(day, 'E', { locale: de })}</TableHead>)}
+                    <TableHead className="no-print"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {employeeFields.map((field, index) => (
+                    <TableRow key={field.id}>
+                      <TableCell>{employeeMap.get(form.getValues(`employee_hours.${index}.employee_id`))}</TableCell>
+                      {[ 'mon', 'tue', 'wed', 'thu', 'fri' ].map(day => (
+                        <TableCell key={day}>
+                          <Input type="number" step="0.25" {...form.register(`employee_hours.${index}.hours.${day as 'mon'}`)} className="print:hidden" />
+                          <span className="hidden print:inline">{form.watch(`employee_hours.${index}.hours.${day as 'mon'}`)}</span>
+                        </TableCell>
+                      ))}
+                      <TableCell className="no-print"><Button variant="ghost" size="icon" onClick={() => removeEmployee(index)}><Trash2 className="h-4 w-4" /></Button></TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              <Select onValueChange={(employeeId) => appendEmployee({ employee_id: employeeId, hours: { mon: null, tue: null, wed: null, thu: null, fri: null } })}>
+                <SelectTrigger className="mt-4 w-[250px] no-print"><SelectValue placeholder="Mitarbeiter hinzufügen..." /></SelectTrigger>
+                <SelectContent>
+                  {employees.filter(e => !employeeFields.some(f => f.employee_id === e.id)).map(e => <SelectItem key={e.id} value={e.id}>{e.first_name} {e.last_name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </CardContent>
+          </Card>
+
+          {/* Work Descriptions */}
+          <Card>
+            <CardHeader><CardTitle className="text-base">Ausgeführte Arbeiten</CardTitle></CardHeader>
+            <CardContent className="space-y-2">
+              {workFields.map((field, index) => (
+                <div key={field.id} className="flex items-center gap-2">
+                  <Textarea {...form.register(`work_descriptions.${index}.description`)} className="print:hidden" />
+                  <p className="hidden print:block w-full border p-2 rounded-md min-h-[60px]">{form.watch(`work_descriptions.${index}.description`)}</p>
+                  <Button variant="ghost" size="icon" onClick={() => removeWork(index)} className="no-print"><Trash2 className="h-4 w-4" /></Button>
+                </div>
+              ))}
+              <Button type="button" variant="outline" size="sm" onClick={() => appendWork({ id: uuidv4(), description: '' })} className="no-print"><PlusCircle className="mr-2 h-4 w-4" /> Arbeit hinzufügen</Button>
+            </CardContent>
+          </Card>
+
+          {/* Materials */}
+          <Card>
+            <CardHeader><CardTitle className="text-base">Benötigtes Material / Maschinen</CardTitle></CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[100px]">Anzahl</TableHead>
+                    <TableHead className="w-[100px]">Einheit</TableHead>
+                    <TableHead>Material/Maschine</TableHead>
+                    <TableHead className="w-[120px]">EP in €</TableHead>
+                    <TableHead className="no-print"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {materialFields.map((field, index) => (
+                    <TableRow key={field.id}>
+                      <TableCell>
+                        <Input type="number" step="0.1" {...form.register(`materials.${index}.quantity`)} className="print:hidden" />
+                        <span className="hidden print:inline">{form.watch(`materials.${index}.quantity`)}</span>
+                      </TableCell>
+                      <TableCell>
+                        <Input {...form.register(`materials.${index}.unit`)} className="print:hidden" />
+                        <span className="hidden print:inline">{form.watch(`materials.${index}.unit`)}</span>
+                      </TableCell>
+                      <TableCell>
+                        <Input {...form.register(`materials.${index}.description`)} className="print:hidden" />
+                        <span className="hidden print:inline">{form.watch(`materials.${index}.description`)}</span>
+                      </TableCell>
+                      <TableCell>
+                        <Input type="number" step="0.01" {...form.register(`materials.${index}.unit_price`)} className="print:hidden" />
+                        <span className="hidden print:inline">{form.watch(`materials.${index}.unit_price`)}</span>
+                      </TableCell>
+                      <TableCell className="no-print"><Button variant="ghost" size="icon" onClick={() => removeMaterial(index)}><Trash2 className="h-4 w-4" /></Button></TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              <Button type="button" variant="outline" size="sm" className="mt-4 no-print" onClick={() => appendMaterial({ id: uuidv4(), quantity: null, unit: '', description: '', unit_price: null })}><PlusCircle className="mr-2 h-4 w-4" /> Material hinzufügen</Button>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Employee Hours */}
-        <Card>
-          <CardHeader><CardTitle className="text-base">Mitarbeiterstunden</CardTitle></CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[250px]">Name</TableHead>
-                  {weekDays.map(day => <TableHead key={day.toISOString()} className="text-center">{format(day, 'E', { locale: de })}</TableHead>)}
-                  <TableHead></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {employeeFields.map((field, index) => (
-                  <TableRow key={field.id}>
-                    <TableCell>{employeeMap.get(form.getValues(`employee_hours.${index}.employee_id`))}</TableCell>
-                    <TableCell><Input type="number" step="0.25" {...form.register(`employee_hours.${index}.hours.mon`)} /></TableCell>
-                    <TableCell><Input type="number" step="0.25" {...form.register(`employee_hours.${index}.hours.tue`)} /></TableCell>
-                    <TableCell><Input type="number" step="0.25" {...form.register(`employee_hours.${index}.hours.wed`)} /></TableCell>
-                    <TableCell><Input type="number" step="0.25" {...form.register(`employee_hours.${index}.hours.thu`)} /></TableCell>
-                    <TableCell><Input type="number" step="0.25" {...form.register(`employee_hours.${index}.hours.fri`)} /></TableCell>
-                    <TableCell><Button variant="ghost" size="icon" onClick={() => removeEmployee(index)}><Trash2 className="h-4 w-4" /></Button></TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            <Select onValueChange={(employeeId) => appendEmployee({ employee_id: employeeId, hours: { mon: null, tue: null, wed: null, thu: null, fri: null } })}>
-              <SelectTrigger className="mt-4 w-[250px]"><SelectValue placeholder="Mitarbeiter hinzufügen..." /></SelectTrigger>
-              <SelectContent>
-                {employees.filter(e => !employeeFields.some(f => f.employee_id === e.id)).map(e => <SelectItem key={e.id} value={e.id}>{e.first_name} {e.last_name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </CardContent>
-        </Card>
-
-        {/* Work Descriptions */}
-        <Card>
-          <CardHeader><CardTitle className="text-base">Ausgeführte Arbeiten</CardTitle></CardHeader>
-          <CardContent className="space-y-2">
-            {workFields.map((field, index) => (
-              <div key={field.id} className="flex items-center gap-2">
-                <Textarea {...form.register(`work_descriptions.${index}.description`)} />
-                <Button variant="ghost" size="icon" onClick={() => removeWork(index)}><Trash2 className="h-4 w-4" /></Button>
-              </div>
-            ))}
-            <Button type="button" variant="outline" size="sm" onClick={() => appendWork({ id: uuidv4(), description: '' })}><PlusCircle className="mr-2 h-4 w-4" /> Arbeit hinzufügen</Button>
-          </CardContent>
-        </Card>
-
-        {/* Materials */}
-        <Card>
-          <CardHeader><CardTitle className="text-base">Benötigtes Material / Maschinen</CardTitle></CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[100px]">Anzahl</TableHead>
-                  <TableHead className="w-[100px]">Einheit</TableHead>
-                  <TableHead>Material/Maschine</TableHead>
-                  <TableHead className="w-[120px]">EP in €</TableHead>
-                  <TableHead></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {materialFields.map((field, index) => (
-                  <TableRow key={field.id}>
-                    <TableCell><Input type="number" step="0.1" {...form.register(`materials.${index}.quantity`)} /></TableCell>
-                    <TableCell><Input {...form.register(`materials.${index}.unit`)} /></TableCell>
-                    <TableCell><Input {...form.register(`materials.${index}.description`)} /></TableCell>
-                    <TableCell><Input type="number" step="0.01" {...form.register(`materials.${index}.unit_price`)} /></TableCell>
-                    <TableCell><Button variant="ghost" size="icon" onClick={() => removeMaterial(index)}><Trash2 className="h-4 w-4" /></Button></TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => appendMaterial({ id: uuidv4(), quantity: null, unit: '', description: '', unit_price: null })}><PlusCircle className="mr-2 h-4 w-4" /> Material hinzufügen</Button>
-          </CardContent>
-        </Card>
-
-        <div className="flex justify-end gap-2">
+        <div className="flex justify-end gap-2 no-print">
+          <Button type="button" variant="outline" onClick={() => window.print()}>
+            <Printer className="mr-2 h-4 w-4" />
+            Drucken
+          </Button>
           <Button type="button" variant="ghost" onClick={onClose}>Abbrechen</Button>
           <Button type="submit" disabled={mutation.isPending}>{mutation.isPending ? "Speichern..." : "Bericht speichern"}</Button>
         </div>

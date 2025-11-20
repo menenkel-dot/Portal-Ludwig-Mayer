@@ -99,3 +99,27 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  @media print {
+    .no-print {
+      display: none !important;
+    }
+    body {
+      background-color: white !important;
+    }
+    @page {
+      size: auto;
+      margin: 0.5in;
+    }
+    /* Ensure the dialog content takes up the full page */
+    #regie-report-printable-area {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      border: none !important;
+      box-shadow: none !important;
+    }
+  }
+}
