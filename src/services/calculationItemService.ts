@@ -31,6 +31,20 @@ export const createCalculationItem = async (itemData: NewCalculationItem) => {
   return data;
 };
 
+export const addServiceItemToCalculation = async (calculationId: string, serviceItemId: string, quantity: number) => {
+  const { error } = await supabase.rpc('add_service_item_to_calculation', {
+    p_calculation_id: calculationId,
+    p_service_item_id: serviceItemId,
+    p_quantity: quantity,
+  });
+
+  if (error) {
+    console.error('Error adding service item to calculation:', error);
+    throw new Error(error.message);
+  }
+  return true;
+};
+
 export const updateCalculationItem = async (id: string, itemData: Partial<NewCalculationItem>) => {
   const { data, error } = await supabase
     .from('calculation_items')

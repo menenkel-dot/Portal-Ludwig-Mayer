@@ -80,6 +80,9 @@ export type Calculation = {
   description?: string;
   site_id: string;
   total_amount: number;
+  energy_surcharge_percent: number;
+  other_surcharges_percent: number;
+  discount_percent: number;
   created_at: string;
   sites: { name: string } | null;
 };
@@ -87,6 +90,7 @@ export type Calculation = {
 export type CalculationItem = {
   id: string;
   calculation_id: string;
+  parent_item_id: string | null;
   description: string;
   quantity: number;
   unit: string | null;
