@@ -149,7 +149,7 @@ export const CalculationItemForm = ({ onSubmit, initialData, materials, serviceI
             </FormItem>
           )}
         />
-        <div className="grid grid-cols-4 gap-4">
+        <div className={cn("grid gap-4", isSubItem ? "grid-cols-4" : "grid-cols-3")}>
           <FormField
             control={form.control}
             name="quantity"
@@ -164,13 +164,15 @@ export const CalculationItemForm = ({ onSubmit, initialData, materials, serviceI
               <FormItem><FormLabel>Einheit</FormLabel><FormControl><Input placeholder="m³, h, Stk" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
             )}
           />
-          <FormField
-            control={form.control}
-            name="factor"
-            render={({ field }) => (
-              <FormItem><FormLabel>Faktor</FormLabel><FormControl><Input type="number" step="0.01" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
-            )}
-          />
+          {isSubItem && (
+            <FormField
+              control={form.control}
+              name="factor"
+              render={({ field }) => (
+                <FormItem><FormLabel>Faktor</FormLabel><FormControl><Input type="number" step="0.01" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+              )}
+            />
+          )}
           <FormField
             control={form.control}
             name="unit_price"
