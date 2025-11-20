@@ -96,6 +96,7 @@ export type CalculationItem = {
   unit: string | null;
   unit_price: number;
   total_price: number;
+  factor: number;
   created_at: string;
   material_id: string | null;
   service_item_id: string | null;

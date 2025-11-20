@@ -24,6 +24,7 @@ const formSchema = z.object({
   description: z.string().min(3, "Beschreibung ist erforderlich."),
   quantity: z.coerce.number().positive("Menge muss positiv sein."),
   unit: z.string().optional().nullable(),
+  factor: z.coerce.number().optional().nullable(),
   unit_price: z.coerce.number().min(0, "Stückpreis darf nicht negativ sein."),
   material_id: z.string().optional().nullable(),
   service_item_id: z.string().optional().nullable(),
@@ -47,6 +48,7 @@ export const CalculationItemForm = ({ onSubmit, initialData, materials, serviceI
       description: initialData?.description || "",
       quantity: initialData?.quantity || 1,
       unit: initialData?.unit || "",
+      factor: initialData?.factor || 1,
       unit_price: initialData?.unit_price || 0,
       material_id: initialData?.material_id || null,
       service_item_id: initialData?.service_item_id || null,
@@ -147,7 +149,7 @@ export const CalculationItemForm = ({ onSubmit, initialData, materials, serviceI
             </FormItem>
           )}
         />
-        <div className="grid grid-cols-3 gap-4">
+        <div className={cn("grid gap-4", isSubItem ? "grid-cols-4" : "grid-cols-3")}>
           <FormField
             control={form.control}
             name="quantity"
@@ -162,6 +164,15 @@ export const CalculationItemForm = ({ onSubmit, initialData, materials, serviceI
               <FormItem><FormLabel>Einheit</FormLabel><FormControl><Input placeholder="m³, h, Stk" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
             )}
           />
+          {isSubItem && (
+            <FormField
+              control={form.control}
+              name="factor"
+              render={({ field }) => (
+                <FormItem><FormLabel>Faktor</FormLabel><FormControl><Input type="number" step="0.01" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+              )}
+            />
+          )}
           <FormField
             control={form.control}
             name="unit_price"
