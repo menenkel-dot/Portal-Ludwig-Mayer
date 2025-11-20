@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getCalculations, updateCalculation } from "@/services/calculationService";
+import { getCalculations } from "@/services/calculationService";
 import { getCalculationItems, createCalculationItem, updateCalculationItem, deleteCalculationItem, addServiceItemToCalculation, NewCalculationItem } from "@/services/calculationItemService";
 import { getMaterials } from "@/services/materialService";
 import { getServiceItems } from "@/services/serviceCatalogService";
@@ -9,11 +9,10 @@ import { CalculationItem } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, PlusCircle, ArrowLeft, ChevronRight, ChevronDown } from "lucide-react";
 import { CalculationItemForm } from "@/components/CalculationItemForm";
-import { CalculationSummary } from "@/components/CalculationSummary";
 import { showSuccess, showError } from "@/utils/toast";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
@@ -69,7 +68,6 @@ const CalculationDetail = () => {
   const updateItemMutation = useMutation({ mutationFn: ({ itemId, data }: { itemId: string; data: Partial<NewCalculationItem> }) => updateCalculationItem(itemId, data), ...mutationOptions, onSuccess: () => { mutationOptions.onSuccess(); showSuccess("Posten aktualisiert."); } });
   const deleteItemMutation = useMutation({ mutationFn: deleteCalculationItem, ...mutationOptions, onSuccess: () => { mutationOptions.onSuccess(); showSuccess("Posten gelöscht."); } });
   const addServiceItemMutation = useMutation({ mutationFn: ({ calcId, serviceId, qty }: { calcId: string, serviceId: string, qty: number }) => addServiceItemToCalculation(calcId, serviceId, qty), ...mutationOptions, onSuccess: () => { mutationOptions.onSuccess(); showSuccess("Leistungsposition hinzugefügt."); } });
-  const updateCalcMutation = useMutation({ mutationFn: (data: Partial<Calculation>) => updateCalculation(id!, data), ...mutationOptions, onSuccess: () => { mutationOptions.onSuccess(); showSuccess("Zuschläge gespeichert."); } });
 
   const handleFormSubmit = (data: Omit<NewCalculationItem, 'calculation_id'>, isServiceItem: boolean) => {
     if (!id) return;
@@ -109,8 +107,6 @@ const CalculationDetail = () => {
           <p className="text-sm text-muted-foreground pt-2">Baustelle: {calculation.sites?.name || "N/A"}</p>
         </CardHeader>
       </Card>
-
-      <CalculationSummary calculation={calculation} onUpdate={(data) => updateCalcMutation.mutate(data)} isUpdating={updateCalcMutation.isPending} />
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
