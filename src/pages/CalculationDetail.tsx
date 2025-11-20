@@ -116,7 +116,7 @@ const CalculationDetail = () => {
         <CardContent>
           <div className="border rounded-md">
             <Table>
-              <TableHeader><TableRow><TableHead className="w-12"></TableHead><TableHead>Beschreibung</TableHead><TableHead className="text-right">Menge</TableHead><TableHead>Einheit</TableHead><TableHead className="text-right">Preis/Einheit</TableHead><TableHead className="text-right">Gesamt</TableHead><TableHead className="w-[50px]"></TableHead></TableRow></TableHeader>
+              <TableHeader><TableRow><TableHead className="w-12"></TableHead><TableHead>Beschreibung</TableHead><TableHead className="text-right">Menge</TableHead><TableHead>Einheit</TableHead><TableHead className="text-center">Faktor</TableHead><TableHead className="text-right">Preis/Einheit</TableHead><TableHead className="text-right">Gesamt</TableHead><TableHead className="w-[50px]"></TableHead></TableRow></TableHeader>
               <TableBody>
                 {itemsHierarchy.map(item => <CalculationItemRow key={item.id} item={item} onEdit={openDialog} onDelete={deleteItemMutation.mutate} />)}
               </TableBody>
@@ -165,6 +165,7 @@ const CalculationItemRow = ({ item, onEdit, onDelete }: { item: CalculationItem 
           <TableCell className="font-medium">{item.description}</TableCell>
           <TableCell className="text-right">{item.quantity.toFixed(2)}</TableCell>
           <TableCell>{item.unit}</TableCell>
+          <TableCell></TableCell>
           <TableCell className="text-right">{formatCurrency(item.unit_price)}</TableCell>
           <TableCell className="text-right font-semibold">{formatCurrency(item.total_price)}</TableCell>
           <TableCell>
@@ -186,6 +187,7 @@ const CalculationItemRow = ({ item, onEdit, onDelete }: { item: CalculationItem 
                   <TableCell className="pl-12 text-muted-foreground">{child.description}</TableCell>
                   <TableCell className="text-right text-muted-foreground">{child.quantity.toFixed(2)}</TableCell>
                   <TableCell className="text-muted-foreground">{child.unit}</TableCell>
+                  <TableCell className="text-center text-muted-foreground">{child.factor.toFixed(2)}</TableCell>
                   <TableCell className="text-right text-muted-foreground">{formatCurrency(child.unit_price)}</TableCell>
                   <TableCell className="text-right text-muted-foreground">{formatCurrency(child.total_price)}</TableCell>
                   <TableCell>
