@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Trash2, PlusCircle, Printer } from "lucide-react";
 import { startOfWeek, addDays, format, setWeek, setYear } from "date-fns";
 import { de } from "date-fns/locale";
@@ -105,6 +105,18 @@ export const RegieReportForm = ({ siteId, reportId, weekNumber, year, employees,
     return Array.from({ length: 5 }).map((_, i) => addDays(start, i));
   }, [weekNumber, year]);
 
+  const materialsValues = form.watch("materials");
+  const totalAmount = useMemo(() => {
+    if (!materialsValues) return 0;
+    return materialsValues.reduce((sum, item) => {
+      const quantity = item.quantity || 0;
+      const price = item.unit_price || 0;
+      return sum + (quantity * price);
+    }, 0);
+  }, [materialsValues]);
+
+  const formatCurrency = (amount: number) => new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(amount);
+
   const isLoading = isLoadingReport || isLoadingSite;
 
   if (isLoading) return <div>Lade Daten...</div>;
@@ -182,6 +194,7 @@ export const RegieReportForm = ({ siteId, reportId, weekNumber, year, employees,
                     <TableHead className="w-[100px]">Einheit</TableHead>
                     <TableHead>Material/Maschine</TableHead>
                     <TableHead className="w-[120px]">EP in €</TableHead>
+                    <TableHead className="w-[120px] text-right">Gesamt in €</TableHead>
                     <TableHead className="no-print"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -204,6 +217,9 @@ export const RegieReportForm = ({ siteId, reportId, weekNumber, year, employees,
                         <Input type="number" step="0.01" {...form.register(`materials.${index}.unit_price`)} className="print:hidden" />
                         <span className="hidden print:inline">{form.watch(`materials.${index}.unit_price`)}</span>
                       </TableCell>
+                      <TableCell className="text-right">
+                        {formatCurrency((form.watch(`materials.${index}.quantity`) || 0) * (form.watch(`materials.${index}.unit_price`) || 0))}
+                      </TableCell>
                       <TableCell className="no-print"><Button variant="ghost" size="icon" onClick={() => removeMaterial(index)}><Trash2 className="h-4 w-4" /></Button></TableCell>
                     </TableRow>
                   ))}
@@ -211,6 +227,9 @@ export const RegieReportForm = ({ siteId, reportId, weekNumber, year, employees,
               </Table>
               <Button type="button" variant="outline" size="sm" className="mt-4 no-print" onClick={() => appendMaterial({ id: uuidv4(), quantity: null, unit: '', description: '', unit_price: null })}><PlusCircle className="mr-2 h-4 w-4" /> Material hinzufügen</Button>
             </CardContent>
+            <CardFooter className="flex justify-end font-bold text-lg">
+              <div>Betrag Netto gesamt: {formatCurrency(totalAmount)}</div>
+            </CardFooter>
           </Card>
         </div>
 
