@@ -5,6 +5,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
+import { NotificationBell } from "./NotificationBell";
 
 const Layout = () => {
   const isMobile = useIsMobile();
@@ -27,7 +28,9 @@ const Layout = () => {
           
           <img src="/logo.png" alt="Logo" className="h-10" />
 
-          <div className="w-10"></div> {/* Placeholder to center the logo */}
+          <div className="w-10">
+            <NotificationBell />
+          </div>
         </header>
         <main className="p-4 sm:p-6">
           <Outlet />
@@ -42,6 +45,9 @@ const Layout = () => {
         <Sidebar />
       </div>
       <main className="flex-1 p-4 sm:p-6 lg:p-8">
+        <div className="flex justify-end mb-4 no-print">
+          <NotificationBell />
+        </div>
         <Outlet />
       </main>
     </div>
