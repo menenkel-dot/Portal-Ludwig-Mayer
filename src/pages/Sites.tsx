@@ -57,6 +57,8 @@ type SortConfig = {
 
 const ITEMS_PER_PAGE = 10;
 
+const statusOrder: (Site['status'])[] = ['Geplant', 'Kalkuliert', 'Geprüft', 'In Arbeit', 'Abgeschlossen'];
+
 const Sites = () => {
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -102,9 +104,12 @@ const Sites = () => {
         } else if (sortConfig.key === 'employees') {
           valA = a.employees ? `${a.employees.last_name} ${a.employees.first_name}` : '';
           valB = b.employees ? `${b.employees.last_name} ${b.employees.first_name}` : '';
+        } else if (sortConfig.key === 'status') {
+          valA = statusOrder.indexOf(a.status);
+          valB = statusOrder.indexOf(b.status);
         } else {
-          valA = a[sortConfig.key];
-          valB = b[sortConfig.key];
+          valA = a[sortConfig.key as keyof Site];
+          valB = b[sortConfig.key as keyof Site];
         }
         
         if (valA < valB) {

@@ -29,7 +29,7 @@ const formSchema = z.object({
   construction_manager_id: z.string().optional().nullable(),
   start_date: z.string().min(1, "Startdatum ist erforderlich."),
   end_date: z.string().optional().nullable(),
-  status: z.enum(["Geplant", "In Arbeit", "Abgeschlossen"]),
+  status: z.enum(["Geplant", "Kalkuliert", "Geprüft", "In Arbeit", "Abgeschlossen"]),
   notes: z.string().optional(),
 });
 
@@ -187,6 +187,8 @@ export const SiteForm = ({ onSubmit, initialData, customers, employees, onCancel
                 </FormControl>
                 <SelectContent>
                   <SelectItem value="Geplant">Geplant</SelectItem>
+                  <SelectItem value="Kalkuliert">Kalkuliert</SelectItem>
+                  <SelectItem value="Geprüft">Geprüft</SelectItem>
                   <SelectItem value="In Arbeit">In Arbeit</SelectItem>
                   <SelectItem value="Abgeschlossen">Abgeschlossen</SelectItem>
                 </SelectContent>
