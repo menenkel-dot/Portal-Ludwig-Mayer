@@ -19,7 +19,7 @@ import { de } from "date-fns/locale";
 import { showSuccess, showError } from "@/utils/toast";
 import { v4 as uuidv4 } from 'uuid';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 const formSchema = z.object({
   employee_hours: z.array(z.object({
@@ -141,7 +141,7 @@ export const RegieReportForm = ({ siteId, reportId, weekNumber, year, employees,
       doc.setFontSize(12);
       doc.text("Mitarbeiterstunden", 14, startY);
       startY += 6;
-      (doc as any).autoTable({
+      autoTable(doc, {
         startY,
         head: [['Name', 'Mo', 'Di', 'Mi', 'Do', 'Fr']],
         body: formValues.employee_hours.map(emp => [
@@ -150,9 +150,8 @@ export const RegieReportForm = ({ siteId, reportId, weekNumber, year, employees,
         ]),
         theme: 'grid',
         headStyles: { fillColor: [230, 230, 230], textColor: 20 },
-        didDrawPage: (data: any) => { startY = data.cursor.y; }
       });
-      startY += 10;
+      startY = (doc as any).lastAutoTable.finalY + 10;
     }
 
     if (formValues.work_descriptions && formValues.work_descriptions.length > 0) {
@@ -160,15 +159,14 @@ export const RegieReportForm = ({ siteId, reportId, weekNumber, year, employees,
       doc.setFontSize(12);
       doc.text("Ausgeführte Arbeiten", 14, startY);
       startY += 6;
-      (doc as any).autoTable({
+      autoTable(doc, {
         startY,
         head: [['Beschreibung']],
         body: formValues.work_descriptions.map(work => [work.description]),
         theme: 'grid',
         headStyles: { fillColor: [230, 230, 230], textColor: 20 },
-        didDrawPage: (data: any) => { startY = data.cursor.y; }
       });
-      startY += 10;
+      startY = (doc as any).lastAutoTable.finalY + 10;
     }
 
     if (formValues.materials && formValues.materials.length > 0) {
@@ -176,7 +174,7 @@ export const RegieReportForm = ({ siteId, reportId, weekNumber, year, employees,
       doc.setFontSize(12);
       doc.text("Benötigtes Material / Maschinen", 14, startY);
       startY += 6;
-      (doc as any).autoTable({
+      autoTable(doc, {
         startY,
         head: [['Anzahl', 'Einheit', 'Material/Maschine', 'EP', 'Gesamt']],
         body: formValues.materials.map(mat => [
@@ -187,9 +185,8 @@ export const RegieReportForm = ({ siteId, reportId, weekNumber, year, employees,
         theme: 'grid',
         headStyles: { fillColor: [230, 230, 230], textColor: 20 },
         columnStyles: { 3: { halign: 'right' }, 4: { halign: 'right' } },
-        didDrawPage: (data: any) => { startY = data.cursor.y; }
       });
-      startY += 10;
+      startY = (doc as any).lastAutoTable.finalY + 10;
     }
 
     if (startY > pageHeight - 20) { doc.addPage(); startY = 20; }
