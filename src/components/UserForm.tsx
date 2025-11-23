@@ -1,9 +1,17 @@
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Form,
   FormControl,
@@ -13,7 +21,7 @@ import {
   FormMessage,
   FormDescription,
 } from "@/components/ui/form";
-import { NewUserPayload } from "@/services/userService";
+import { AppUser } from "@/types";
 
 const permissionsList = [
   { id: 'dashboard', label: 'Dashboard' },
@@ -29,29 +37,45 @@ const permissionsList = [
   { id: 'settings', label: 'Einstellungen' },
 ];
 
+const departments = ["Geschäftsführung", "Verwaltung", "Kalkulation", "Bauleitung"];
+
 const formSchema = z.object({
   email: z.string().email("Ungültige E-Mail-Adresse."),
-  password: z.string().min(8, "Passwort muss mindestens 8 Zeichen lang sein."),
+  password: z.string().min(8, "Passwort muss mindestens 8 Zeichen haben.").optional().or(z.literal('')),
   permissions: z.array(z.string()).refine((value) => value.some((item) => item), {
     message: "Sie müssen mindestens eine Berechtigung auswählen.",
   }),
+  department: z.string().optional(),
 });
 
 interface UserFormProps {
-  onSubmit: (data: NewUserPayload) => void;
+  onSubmit: (data: any) => void;
+  initialData?: AppUser | null;
   onCancel: () => void;
   isLoading: boolean;
 }
 
-export const UserForm = ({ onSubmit, onCancel, isLoading }: UserFormProps) => {
+export const UserForm = ({ onSubmit, initialData, onCancel, isLoading }: UserFormProps) => {
+  const isEditMode = !!initialData;
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: "",
+      email: initialData?.email || "",
       password: "",
-      permissions: [],
+      permissions: initialData?.app_metadata.permissions || [],
+      department: initialData?.app_metadata.department || "",
     },
   });
+
+  useEffect(() => {
+    form.reset({
+      email: initialData?.email || "",
+      password: "",
+      permissions: initialData?.app_metadata.permissions || [],
+      department: initialData?.app_metadata.department || "",
+    });
+  }, [initialData, form]);
 
   return (
     <Form {...form}>
@@ -63,21 +87,41 @@ export const UserForm = ({ onSubmit, onCancel, isLoading }: UserFormProps) => {
             <FormItem>
               <FormLabel>E-Mail</FormLabel>
               <FormControl>
-                <Input type="email" placeholder="max.mustermann@firma.de" {...field} />
+                <Input type="email" placeholder="max.mustermann@firma.de" {...field} disabled={isEditMode} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
+        {!isEditMode && (
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Passwort</FormLabel>
+                <FormControl>
+                  <Input type="password" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
         <FormField
           control={form.control}
-          name="password"
+          name="department"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Passwort</FormLabel>
-              <FormControl>
-                <Input type="password" {...field} />
-              </FormControl>
+              <FormLabel>Abteilung</FormLabel>
+              <Select onValueChange={field.onChange} value={field.value}>
+                <FormControl>
+                  <SelectTrigger><SelectValue placeholder="Abteilung auswählen" /></SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {departments.map(dep => <SelectItem key={dep} value={dep}>{dep}</SelectItem>)}
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}
@@ -99,32 +143,21 @@ export const UserForm = ({ onSubmit, onCancel, isLoading }: UserFormProps) => {
                     key={item.id}
                     control={form.control}
                     name="permissions"
-                    render={({ field }) => {
-                      return (
-                        <FormItem
-                          key={item.id}
-                          className="flex flex-row items-start space-x-3 space-y-0"
-                        >
-                          <FormControl>
-                            <Checkbox
-                              checked={field.value?.includes(item.id)}
-                              onCheckedChange={(checked) => {
-                                return checked
-                                  ? field.onChange([...field.value, item.id])
-                                  : field.onChange(
-                                      field.value?.filter(
-                                        (value) => value !== item.id
-                                      )
-                                    );
-                              }}
-                            />
-                          </FormControl>
-                          <FormLabel className="font-normal">
-                            {item.label}
-                          </FormLabel>
-                        </FormItem>
-                      );
-                    }}
+                    render={({ field }) => (
+                      <FormItem key={item.id} className="flex flex-row items-start space-x-3 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value?.includes(item.id)}
+                            onCheckedChange={(checked) => {
+                              return checked
+                                ? field.onChange([...field.value, item.id])
+                                : field.onChange(field.value?.filter((value) => value !== item.id));
+                            }}
+                          />
+                        </FormControl>
+                        <FormLabel className="font-normal">{item.label}</FormLabel>
+                      </FormItem>
+                    )}
                   />
                 ))}
               </div>
@@ -133,11 +166,9 @@ export const UserForm = ({ onSubmit, onCancel, isLoading }: UserFormProps) => {
           )}
         />
         <div className="flex justify-end space-x-2 pt-4">
-          <Button type="button" variant="ghost" onClick={onCancel}>
-            Abbrechen
-          </Button>
+          <Button type="button" variant="ghost" onClick={onCancel}>Abbrechen</Button>
           <Button type="submit" disabled={isLoading}>
-            {isLoading ? "Speichern..." : "Benutzer erstellen"}
+            {isLoading ? "Speichern..." : isEditMode ? "Änderungen speichern" : "Benutzer erstellen"}
           </Button>
         </div>
       </form>

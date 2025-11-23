@@ -131,6 +131,7 @@ export type AppUser = {
   app_metadata: {
     permissions: string[];
     role: 'admin' | 'user';
+    department?: string;
   };
   created_at: string;
 };

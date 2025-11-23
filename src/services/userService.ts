@@ -5,7 +5,14 @@ export type NewUserPayload = {
   email: string;
   password?: string;
   permissions: string[];
+  department?: string;
 };
+
+export type UpdateUserPayload = {
+    userId: string;
+    permissions: string[];
+    department?: string;
+}
 
 export const getUsers = async (): Promise<AppUser[]> => {
   const { data, error } = await supabase.functions.invoke('get-users');
@@ -28,3 +35,15 @@ export const createUser = async (userData: NewUserPayload) => {
   }
   return data;
 };
+
+export const updateUser = async (userData: UpdateUserPayload) => {
+    const { data, error } = await supabase.functions.invoke('update-user', {
+        body: userData,
+    });
+
+    if (error) {
+        console.error('Error updating user:', error);
+        throw new Error(error.message);
+    }
+    return data;
+}

@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getUsers, createUser, NewUserPayload } from "@/services/userService";
+import { getUsers, createUser, updateUser, NewUserPayload, UpdateUserPayload } from "@/services/userService";
 import { AppUser } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { PlusCircle } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { PlusCircle, MoreHorizontal } from "lucide-react";
 import { UserForm } from "@/components/UserForm";
 import { showSuccess, showError } from "@/utils/toast";
 import { Badge } from "@/components/ui/badge";
@@ -14,26 +15,64 @@ import { format } from "date-fns";
 const Users = () => {
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<AppUser | null>(null);
 
   const { data: users, isLoading } = useQuery({
     queryKey: ["users"],
     queryFn: getUsers,
   });
 
-  const createMutation = useMutation({
-    mutationFn: createUser,
+  const mutationOptions = {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
       setIsDialogOpen(false);
-      showSuccess("Benutzer erfolgreich erstellt.");
+      setSelectedUser(null);
     },
     onError: (error: Error) => {
       showError(error.message);
     },
+  };
+
+  const createMutation = useMutation({
+    mutationFn: createUser,
+    ...mutationOptions,
+    onSuccess: () => {
+      mutationOptions.onSuccess();
+      showSuccess("Benutzer erfolgreich erstellt.");
+    },
   });
 
-  const handleFormSubmit = (data: NewUserPayload) => {
-    createMutation.mutate(data);
+  const updateMutation = useMutation({
+    mutationFn: updateUser,
+    ...mutationOptions,
+    onSuccess: () => {
+        mutationOptions.onSuccess();
+        showSuccess("Benutzer erfolgreich aktualisiert.");
+    }
+  });
+
+  const handleFormSubmit = (data: any) => {
+    if (selectedUser) {
+      const payload: UpdateUserPayload = {
+        userId: selectedUser.id,
+        permissions: data.permissions,
+        department: data.department,
+      };
+      updateMutation.mutate(payload);
+    } else {
+      const payload: NewUserPayload = {
+        email: data.email,
+        password: data.password,
+        permissions: data.permissions,
+        department: data.department,
+      };
+      createMutation.mutate(payload);
+    }
+  };
+
+  const openDialog = (user: AppUser | null) => {
+    setSelectedUser(user);
+    setIsDialogOpen(true);
   };
 
   if (isLoading) return <div>Lade Benutzer...</div>;
@@ -42,20 +81,21 @@ const Users = () => {
     <div>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <h1 className="text-3xl font-bold">Benutzerverwaltung</h1>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isDialogOpen} onOpenChange={(open) => { if (!open) setSelectedUser(null); setIsDialogOpen(open); }}>
           <DialogTrigger asChild>
-            <Button className="w-full sm:w-auto">
+            <Button onClick={() => openDialog(null)} className="w-full sm:w-auto">
               <PlusCircle className="mr-2 h-4 w-4" /> Neuer Benutzer
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Neuen Benutzer anlegen</DialogTitle>
+              <DialogTitle>{selectedUser ? "Benutzer bearbeiten" : "Neuen Benutzer anlegen"}</DialogTitle>
             </DialogHeader>
             <UserForm
               onSubmit={handleFormSubmit}
+              initialData={selectedUser}
               onCancel={() => setIsDialogOpen(false)}
-              isLoading={createMutation.isPending}
+              isLoading={createMutation.isPending || updateMutation.isPending}
             />
           </DialogContent>
         </Dialog>
@@ -66,8 +106,10 @@ const Users = () => {
           <TableHeader>
             <TableRow>
               <TableHead>E-Mail</TableHead>
+              <TableHead>Abteilung</TableHead>
               <TableHead>Berechtigungen</TableHead>
               <TableHead>Erstellt am</TableHead>
+              <TableHead className="text-right">Aktionen</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -75,6 +117,7 @@ const Users = () => {
               users.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell className="font-medium">{user.email}</TableCell>
+                  <TableCell>{user.app_metadata.department || "-"}</TableCell>
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
                       {user.app_metadata.role === 'admin' ? (
@@ -85,11 +128,21 @@ const Users = () => {
                     </div>
                   </TableCell>
                   <TableCell>{format(new Date(user.created_at), "dd.MM.yyyy")}</TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0"><MoreHorizontal className="h-4 w-4" /></Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => openDialog(user)}>Bearbeiten</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={3} className="h-24 text-center">
+                <TableCell colSpan={5} className="h-24 text-center">
                   Keine Benutzer gefunden.
                 </TableCell>
               </TableRow>
