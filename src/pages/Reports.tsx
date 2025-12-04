@@ -7,8 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  BarChart,
+  ComposedChart,
   Bar,
+  Line,
   XAxis,
   YAxis,
   Tooltip,
@@ -100,6 +101,7 @@ const Reports = () => {
         name: site.name,
         Soll: site.planned_hours,
         Ist: parseFloat((actualHoursBySite[site.id] || 0).toFixed(2)),
+        "80% Schwelle": site.planned_hours * 0.8,
       }))
       .sort((a, b) => b.Soll - a.Soll);
   }, [sites, timeEntries]);
@@ -129,7 +131,7 @@ const Reports = () => {
             </CardHeader>
             <CardContent className="h-[500px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={projectHourComparison} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                <ComposedChart data={projectHourComparison} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
                   <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}h`} />
@@ -137,7 +139,8 @@ const Reports = () => {
                   <Legend />
                   <Bar dataKey="Soll" fill="#a1a1aa" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="Ist" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                </BarChart>
+                  <Line type="monotone" dataKey="80% Schwelle" stroke="#ef4444" strokeDasharray="5 5" dot={false} />
+                </ComposedChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
