@@ -8,7 +8,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ComposedChart,
-  BarChart,
   Bar,
   Line,
   XAxis,
@@ -17,12 +16,47 @@ import {
   ResponsiveContainer,
   Legend,
   CartesianGrid,
+  Customized,
 } from "recharts";
 import { DateRange } from "react-day-picker";
 import { subDays } from "date-fns";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import WeeklyEmployeeReport from "@/components/WeeklyEmployeeReport";
 import ProjectCostReport from "@/components/ProjectCostReport";
+
+const RenderThresholdLines = (props: any) => {
+  const { data, xAxis, yAxis } = props;
+  if (!data || !xAxis || !yAxis) return null;
+
+  const xScale = xAxis.scale;
+  const yScale = yAxis.scale;
+  const barWidth = xScale.bandwidth();
+
+  return (
+    <g>
+      {data.map((entry: any, index: number) => {
+        const thresholdValue = entry["80% Schwelle"];
+        if (thresholdValue > 0) {
+          const x = xScale(entry.name);
+          const y = yScale(thresholdValue);
+          return (
+            <line
+              key={`threshold-${index}`}
+              x1={x}
+              y1={y}
+              x2={x + barWidth}
+              y2={y}
+              stroke="#ef4444"
+              strokeWidth={2}
+              strokeDasharray="3 3"
+            />
+          );
+        }
+        return null;
+      })}
+    </g>
+  );
+};
 
 const Reports = () => {
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
@@ -140,7 +174,8 @@ const Reports = () => {
                   <Legend />
                   <Bar dataKey="Soll" fill="#a1a1aa" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="Ist" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                  <Line type="monotone" dataKey="80% Schwelle" stroke="#ef4444" strokeDasharray="5 5" dot={false} />
+                  <Line dataKey="80% Schwelle" stroke="#ef4444" strokeDasharray="3 3" dot={false} strokeWidth={0} activeDot={false} />
+                  <Customized component={RenderThresholdLines} />
                 </ComposedChart>
               </ResponsiveContainer>
             </CardContent>
