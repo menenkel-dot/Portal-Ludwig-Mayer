@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { getTimeEntries } from "@/services/timeTrackingService";
 import { getEmployees } from "@/services/employeeService";
-import { getCalculations } from "@/services/calculationService";
+import { getSites } from "@/services/siteService";
 import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -13,8 +13,9 @@ import {
   YAxis,
   Tooltip,
   ResponsiveContainer,
+  Legend,
+  CartesianGrid,
 } from "recharts";
-import { Badge } from "@/components/ui/badge";
 import { DateRange } from "react-day-picker";
 import { subDays } from "date-fns";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
@@ -35,14 +36,12 @@ const Reports = () => {
     queryKey: ["employees"],
     queryFn: getEmployees,
   });
-  const { data: calculations, isLoading: isLoadingCalculations } = useQuery({
-    queryKey: ["calculations"],
-    queryFn: getCalculations,
+  const { data: sites, isLoading: isLoadingSites } = useQuery({
+    queryKey: ["sites"],
+    queryFn: getSites,
   });
 
-  const isLoading = isLoadingEntries || isLoadingEmployees || isLoadingCalculations;
-
-  const formatCurrency = (amount: number) => new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(amount);
+  const isLoading = isLoadingEntries || isLoadingEmployees || isLoadingSites;
 
   const filteredTimeEntries = useMemo(() => {
     if (!timeEntries || !dateRange?.from) return [];
@@ -82,36 +81,28 @@ const Reports = () => {
     })).sort((a, b) => b.Stunden - a.Stunden);
   }, [filteredTimeEntries, employees]);
 
-  const projectProfitability = useMemo(() => {
-    if (!filteredTimeEntries || !employees || !calculations) return [];
-    
-    const workEntries = filteredTimeEntries.filter(entry => entry.entry_type === 'Arbeit');
-    const activeSiteIds = new Set(workEntries.map(entry => entry.site_id));
-    const relevantCalculations = calculations.filter(calc => activeSiteIds.has(calc.site_id));
-    
-    const employeeRateMap = new Map(employees.map(e => [e.id, e.hourly_rate]));
-    const actualCosts = workEntries.reduce((acc, entry) => {
-      const rate = employeeRateMap.get(entry.employee_id) || 0;
-      if (entry.site_id) {
-        if (!acc[entry.site_id]) acc[entry.site_id] = 0;
-        acc[entry.site_id] += entry.hours_worked * rate;
-      }
-      return acc;
-    }, {} as Record<string, number>);
+  const projectHourComparison = useMemo(() => {
+    if (!sites || !timeEntries) return [];
 
-    return relevantCalculations.map(calc => {
-      const target = calc.total_amount;
-      const actual = actualCosts[calc.site_id] || 0;
-      const difference = target - actual;
-      return {
-        name: calc.name,
-        siteName: calc.sites?.name || 'N/A',
-        target,
-        actual,
-        difference,
-      };
-    }).sort((a, b) => b.target - a.target);
-  }, [filteredTimeEntries, employees, calculations]);
+    const actualHoursBySite = timeEntries
+      .filter(entry => entry.site_id && entry.entry_type === 'Arbeit')
+      .reduce((acc, entry) => {
+        if (!acc[entry.site_id!]) {
+          acc[entry.site_id!] = 0;
+        }
+        acc[entry.site_id!] += entry.hours_worked;
+        return acc;
+      }, {} as Record<string, number>);
+
+    return sites
+      .filter(site => site.planned_hours > 0 || actualHoursBySite[site.id] > 0)
+      .map(site => ({
+        name: site.name,
+        Soll: site.planned_hours,
+        Ist: parseFloat((actualHoursBySite[site.id] || 0).toFixed(2)),
+      }))
+      .sort((a, b) => b.Soll - a.Soll);
+  }, [sites, timeEntries]);
 
   if (isLoading) return <div>Lade Reports...</div>;
 
@@ -123,7 +114,7 @@ const Reports = () => {
       </div>
       <Tabs defaultValue="profitability">
         <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="profitability">Wirtschaftlichkeit</TabsTrigger>
+          <TabsTrigger value="profitability">Soll-Ist Stunden</TabsTrigger>
           <TabsTrigger value="site_hours">Stunden/Baustelle</TabsTrigger>
           <TabsTrigger value="employee_hours">Mitarbeiter-Auslastung</TabsTrigger>
           <TabsTrigger value="weekly_employee_report">Mitarbeiter Gesamt</TabsTrigger>
@@ -133,34 +124,21 @@ const Reports = () => {
         <TabsContent value="profitability" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Projekt-Wirtschaftlichkeit (Soll-Ist-Vergleich)</CardTitle>
-              <CardDescription>Vergleich der kalkulierten Kosten mit den tatsächlich erfassten Lohnkosten im ausgewählten Zeitraum.</CardDescription>
+              <CardTitle>Soll-Ist-Vergleich der Stunden</CardTitle>
+              <CardDescription>Vergleich der kalkulierten Soll-Stunden mit den tatsächlich erfassten Ist-Stunden pro Baustelle.</CardDescription>
             </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Projekt</TableHead>
-                    <TableHead>Soll (Kalkulation)</TableHead>
-                    <TableHead>Ist (Lohnkosten)</TableHead>
-                    <TableHead>Differenz</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {projectProfitability.map((p, i) => (
-                    <TableRow key={i}>
-                      <TableCell className="font-medium">{p.name}<p className="text-sm text-muted-foreground">{p.siteName}</p></TableCell>
-                      <TableCell>{formatCurrency(p.target)}</TableCell>
-                      <TableCell>{formatCurrency(p.actual)}</TableCell>
-                      <TableCell>
-                        <Badge variant={p.difference >= 0 ? "default" : "destructive"}>
-                          {formatCurrency(p.difference)}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+            <CardContent className="h-[500px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={projectHourComparison} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}h`} />
+                  <Tooltip cursor={{ fill: 'rgba(241, 245, 249, 0.5)' }} contentStyle={{ background: "white", border: "1px solid #e2e8f0", borderRadius: "0.5rem" }} />
+                  <Legend />
+                  <Bar dataKey="Soll" fill="#a1a1aa" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Ist" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
             </CardContent>
           </Card>
         </TabsContent>

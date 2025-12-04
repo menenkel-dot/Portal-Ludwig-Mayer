@@ -21,6 +21,7 @@ export type Site = {
   status: 'Geplant' | 'Kalkuliert' | 'Geprüft' | 'In Arbeit' | 'Abgeschlossen';
   notes?: string;
   created_at: string;
+  planned_hours: number;
   customers: { 
     id: string;
     name: string; 
@@ -74,36 +75,6 @@ export type TimeEntry = {
   sites: { id: string; name: string } | null;
 };
 
-export type Calculation = {
-  id: string;
-  name: string;
-  description?: string;
-  site_id: string;
-  total_amount: number;
-  energy_surcharge_percent: number;
-  other_surcharges_percent: number;
-  discount_percent: number;
-  created_at: string;
-  sites: { name: string } | null;
-};
-
-export type CalculationItem = {
-  id: string;
-  calculation_id: string;
-  parent_item_id: string | null;
-  description: string;
-  quantity: number;
-  unit: string | null;
-  unit_price: number;
-  total_price: number;
-  factor: number;
-  created_at: string;
-  material_id: string | null;
-  service_item_id: string | null;
-  materials: { name: string } | null;
-  service_items?: { name: string } | null;
-};
-
 export type Material = {
   id: string;
   name: string;
@@ -154,28 +125,6 @@ export type SiteNote = {
   content: string | null;
   created_at: string;
   site_note_attachments: SiteNoteAttachment[];
-};
-
-export type ServiceItemComponent = {
-  id: string;
-  service_item_id: string;
-  material_id: string | null;
-  description: string;
-  quantity: number;
-  unit: string | null;
-  unit_price: number;
-  type: 'Material' | 'Lohn' | 'Sonstiges';
-  created_at: string;
-  materials?: { name: string } | null;
-};
-
-export type ServiceItem = {
-  id: string;
-  name: string;
-  description: string | null;
-  unit: string | null;
-  created_at: string;
-  service_item_components: ServiceItemComponent[];
 };
 
 export type EmployeeAssignment = {

@@ -16,13 +16,9 @@ import Employees from "./pages/Employees";
 import EmployeeDetail from "./pages/EmployeeDetail";
 import TimeTracking from "./pages/TimeTracking";
 import Reports from "./pages/Reports";
-import Calculations from "./pages/Calculations";
-import CalculationDetail from "./pages/CalculationDetail";
 import Settings from "./pages/Settings";
 import Users from "./pages/Users";
 import Materials from "./pages/Materials";
-import ServiceCatalog from "./pages/ServiceCatalog";
-import ServiceCatalogDetail from "./pages/ServiceCatalogDetail";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
@@ -54,10 +50,6 @@ const App = () => (
                 <Route path="/materials" element={<ProtectedRoute permission="materials"><Materials /></ProtectedRoute>} />
                 <Route path="/time-tracking" element={<ProtectedRoute permission="time-tracking"><TimeTracking /></ProtectedRoute>} />
                 <Route path="/reports" element={<ProtectedRoute permission="reports"><Reports /></ProtectedRoute>} />
-                <Route path="/calculations" element={<ProtectedRoute permission="calculations"><Calculations /></ProtectedRoute>} />
-                <Route path="/calculations/:id" element={<ProtectedRoute permission="calculations"><CalculationDetail /></ProtectedRoute>} />
-                <Route path="/service-catalog" element={<ProtectedRoute permission="service-catalog"><ServiceCatalog /></ProtectedRoute>} />
-                <Route path="/service-catalog/:id" element={<ProtectedRoute permission="service-catalog"><ServiceCatalogDetail /></ProtectedRoute>} />
                 <Route path="/settings" element={<ProtectedRoute permission="settings"><Settings /></ProtectedRoute>} />
                 <Route path="/users" element={<ProtectedRoute permission="users"><Users /></ProtectedRoute>} />
               </Route>

@@ -30,6 +30,7 @@ const formSchema = z.object({
   start_date: z.string().min(1, "Startdatum ist erforderlich."),
   end_date: z.string().optional().nullable(),
   status: z.enum(["Geplant", "Kalkuliert", "Geprüft", "In Arbeit", "Abgeschlossen"]),
+  planned_hours: z.coerce.number().min(0, "Stunden müssen eine positive Zahl sein.").optional().nullable(),
   notes: z.string().optional(),
 });
 
@@ -53,6 +54,7 @@ export const SiteForm = ({ onSubmit, initialData, customers, employees, onCancel
       start_date: initialData?.start_date ? new Date(initialData.start_date).toISOString().split('T')[0] : "",
       end_date: initialData?.end_date ? new Date(initialData.end_date).toISOString().split('T')[0] : null,
       status: initialData?.status || "Geplant",
+      planned_hours: initialData?.planned_hours || 0,
       notes: initialData?.notes || "",
     },
   });
@@ -173,30 +175,45 @@ export const SiteForm = ({ onSubmit, initialData, customers, employees, onCancel
             )}
           />
         </div>
-        <FormField
-          control={form.control}
-          name="status"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Status</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="status"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Status</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="Geplant">Geplant</SelectItem>
+                    <SelectItem value="Kalkuliert">Kalkuliert</SelectItem>
+                    <SelectItem value="Geprüft">Geprüft</SelectItem>
+                    <SelectItem value="In Arbeit">In Arbeit</SelectItem>
+                    <SelectItem value="Abgeschlossen">Abgeschlossen</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="planned_hours"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Soll-Stunden</FormLabel>
                 <FormControl>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
+                  <Input type="number" step="1" placeholder="z.B. 400" {...field} value={field.value ?? ''} />
                 </FormControl>
-                <SelectContent>
-                  <SelectItem value="Geplant">Geplant</SelectItem>
-                  <SelectItem value="Kalkuliert">Kalkuliert</SelectItem>
-                  <SelectItem value="Geprüft">Geprüft</SelectItem>
-                  <SelectItem value="In Arbeit">In Arbeit</SelectItem>
-                  <SelectItem value="Abgeschlossen">Abgeschlossen</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
         <FormField
           control={form.control}
           name="notes"
