@@ -75,16 +75,6 @@ export type TimeEntry = {
   sites: { id: string; name: string } | null;
 };
 
-export type Material = {
-  id: string;
-  name: string;
-  unit: string;
-  price_per_unit: number;
-  supplier: string | null;
-  notes: string | null;
-  created_at: string;
-};
-
 export type SiteDocument = {
   id: string;
   site_id: string;

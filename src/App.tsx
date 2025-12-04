@@ -18,7 +18,6 @@ import TimeTracking from "./pages/TimeTracking";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import Users from "./pages/Users";
-import Materials from "./pages/Materials";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
@@ -47,7 +46,6 @@ const App = () => (
                 <Route path="/sites" element={<ProtectedRoute permission="sites"><Sites /></ProtectedRoute>} />
                 <Route path="/sites/:id" element={<ProtectedRoute permission="sites"><SiteDetail /></ProtectedRoute>} />
                 <Route path="/fleet" element={<ProtectedRoute permission="fleet"><Fleet /></ProtectedRoute>} />
-                <Route path="/materials" element={<ProtectedRoute permission="materials"><Materials /></ProtectedRoute>} />
                 <Route path="/time-tracking" element={<ProtectedRoute permission="time-tracking"><TimeTracking /></ProtectedRoute>} />
                 <Route path="/reports" element={<ProtectedRoute permission="reports"><Reports /></ProtectedRoute>} />
                 <Route path="/settings" element={<ProtectedRoute permission="settings"><Settings /></ProtectedRoute>} />

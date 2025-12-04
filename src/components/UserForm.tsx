@@ -29,7 +29,6 @@ const permissionsList = [
   { id: 'employees', label: 'Mitarbeiter' },
   { id: 'sites', label: 'Baustellen' },
   { id: 'fleet', label: 'Fuhrpark' },
-  { id: 'materials', label: 'Materialien' },
   { id: 'calculations', label: 'Kalkulation' },
   { id: 'service-catalog', label: 'Leistungskatalog' },
   { id: 'time-tracking', label: 'Zeiterfassung' },

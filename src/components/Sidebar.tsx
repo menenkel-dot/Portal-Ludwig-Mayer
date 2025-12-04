@@ -21,7 +21,6 @@ const allNavItems = [
   { href: "/employees", icon: Contact, label: "Mitarbeiter", permission: "employees" },
   { href: "/sites", icon: Building, label: "Baustellen", permission: "sites" },
   { href: "/fleet", icon: Truck, label: "Fuhrpark", permission: "fleet" },
-  { href: "/materials", icon: Box, label: "Materialien", permission: "materials" },
   { href: "/time-tracking", icon: Clock, label: "Zeiterfassung", permission: "time-tracking" },
   { href: "/reports", icon: FileText, label: "Reports", permission: "reports" },
 ];
