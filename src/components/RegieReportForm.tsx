@@ -172,7 +172,7 @@ export const RegieReportForm = ({ siteId, reportId, weekNumber, year, employees,
     if (formValues.materials && formValues.materials.length > 0) {
       if (startY > pageHeight - 60) { doc.addPage(); startY = 20; }
       doc.setFontSize(12);
-      doc.text("Benötigtes Material / Maschinen", 14, startY);
+      doc.text("Benötigte(s) Material / Maschinen / Stunden", 14, startY);
       startY += 6;
       autoTable(doc, {
         startY,
@@ -260,7 +260,7 @@ export const RegieReportForm = ({ siteId, reportId, weekNumber, year, employees,
           </Card>
 
           <Card className="mt-6">
-            <CardHeader><CardTitle className="text-base">Benötigtes Material / Maschinen</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base">Benötigte(s) Material / Maschinen / Stunden</CardTitle></CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
