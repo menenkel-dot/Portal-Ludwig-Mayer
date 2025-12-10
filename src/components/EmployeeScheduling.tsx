@@ -16,7 +16,7 @@ import { showSuccess, showError } from "@/utils/toast";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "./ui/skeleton";
 
-const STATIC_ACTIVITIES = ["Urlaub", "Krank", "Lager", "Fahrer"];
+const STATIC_ACTIVITIES = ["Urlaub", "Diverse Bauvorhaben", "Krank", "Lager", "Fahrer"];
 const TEAM_COUNT = 8;
 
 type GridState = Record<string, Record<number, string | null>>; // { [rowKey]: { [teamNumber]: employeeId } }
