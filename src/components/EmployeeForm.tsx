@@ -18,7 +18,7 @@ const formSchema = z.object({
   first_name: z.string().min(2, "Vorname ist erforderlich."),
   last_name: z.string().min(2, "Nachname ist erforderlich."),
   position: z.string().min(3, "Position ist erforderlich."),
-  email: z.string().email("Ungültige E-Mail-Adresse."),
+  email: z.string().email("Ungültige E-Mail-Adresse.").optional().or(z.literal("")).nullable(),
   phone: z.string().min(5, "Telefonnummer ist erforderlich."),
   hourly_rate: z.coerce.number().positive("Stundensatz muss eine positive Zahl sein."),
 });
@@ -92,9 +92,9 @@ export const EmployeeForm = ({ onSubmit, initialData, onCancel, isLoading }: Emp
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>E-Mail</FormLabel>
+              <FormLabel>E-Mail (optional)</FormLabel>
               <FormControl>
-                <Input type="email" placeholder="max.mustermann@firma.de" {...field} />
+                <Input type="email" placeholder="max.mustermann@firma.de" {...field} value={field.value ?? ''} />
               </FormControl>
               <FormMessage />
             </FormItem>
