@@ -42,7 +42,8 @@ const Fleet = () => {
       vehicle.manufacturer.toLowerCase().includes(lowercasedTerm) ||
       vehicle.model.toLowerCase().includes(lowercasedTerm) ||
       vehicle.license_plate.toLowerCase().includes(lowercasedTerm) ||
-      vehicle.vehicle_type.toLowerCase().includes(lowercasedTerm)
+      vehicle.vehicle_type.toLowerCase().includes(lowercasedTerm) ||
+      vehicle.driver.toLowerCase().includes(lowercasedTerm)
     );
   }, [vehicles, searchTerm]);
 
@@ -191,8 +192,8 @@ const Fleet = () => {
                 </Button>
               </TableHead>
               <TableHead>
-                <Button variant="ghost" onClick={() => requestSort('location')}>
-                  Standort <ArrowUpDown className="ml-2 h-4 w-4" />
+                <Button variant="ghost" onClick={() => requestSort('driver')}>
+                  Fahrer <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
               </TableHead>
               <TableHead>
@@ -210,7 +211,7 @@ const Fleet = () => {
                   <TableCell className="font-medium">{vehicle.manufacturer} {vehicle.model}</TableCell>
                   <TableCell>{vehicle.license_plate}</TableCell>
                   <TableCell>{vehicle.vehicle_type}</TableCell>
-                  <TableCell>{vehicle.location}</TableCell>
+                  <TableCell>{vehicle.driver}</TableCell>
                   <TableCell>
                     <Badge variant={
                       vehicle.status === 'Verfügbar' ? 'default' :

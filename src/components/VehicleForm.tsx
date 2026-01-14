@@ -28,7 +28,7 @@ const formSchema = z.object({
   manufacturer: z.string().min(2, "Hersteller ist erforderlich."),
   model: z.string().min(1, "Modell ist erforderlich."),
   status: z.enum(["Verfügbar", "Im Einsatz", "In Wartung"]),
-  location: z.string().min(3, "Standort ist erforderlich."),
+  driver: z.string().min(3, "Fahrer ist erforderlich."),
   next_maintenance: z.string().optional().nullable(),
   notes: z.string().optional(),
 });
@@ -49,7 +49,7 @@ export const VehicleForm = ({ onSubmit, initialData, onCancel, isLoading }: Vehi
       manufacturer: initialData?.manufacturer || "",
       model: initialData?.model || "",
       status: initialData?.status || "Verfügbar",
-      location: initialData?.location || "",
+      driver: initialData?.driver || "",
       next_maintenance: initialData?.next_maintenance ? new Date(initialData.next_maintenance).toISOString().split('T')[0] : null,
       notes: initialData?.notes || "",
     },
@@ -135,12 +135,12 @@ export const VehicleForm = ({ onSubmit, initialData, onCancel, isLoading }: Vehi
           />
           <FormField
             control={form.control}
-            name="location"
+            name="driver"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Standort</FormLabel>
+                <FormLabel>Fahrer</FormLabel>
                 <FormControl>
-                  <Input placeholder="z.B. Firmensitz" {...field} />
+                  <Input placeholder="z.B. Max Mustermann" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
