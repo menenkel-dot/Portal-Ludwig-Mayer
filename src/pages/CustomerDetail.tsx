@@ -99,7 +99,7 @@ const CustomerDetail = () => {
                           {site.name}
                         </Link>
                       </TableCell>
-                      <TableCell>{format(new Date(site.start_date), "dd.MM.yyyy")}</TableCell>
+                      <TableCell>{site.start_date ? format(new Date(site.start_date), "dd.MM.yyyy") : "-"}</TableCell>
                       <TableCell>
                         <Badge variant={
                           site.status === 'Abgeschlossen' ? 'secondary' :

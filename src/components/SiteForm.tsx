@@ -27,7 +27,7 @@ const formSchema = z.object({
   address: z.string().min(5, "Adresse muss mindestens 5 Zeichen lang sein."),
   customer_id: z.string({ required_error: "Bitte einen Kunden auswählen." }),
   construction_manager_id: z.string().optional().nullable(),
-  start_date: z.string().min(1, "Startdatum ist erforderlich."),
+  start_date: z.string().optional().nullable(),
   end_date: z.string().optional().nullable(),
   status: z.enum(["Geplant", "Kalkuliert", "Geprüft", "In Arbeit", "Abgeschlossen"]),
   planned_hours: z.coerce.number().min(0, "Stunden müssen eine positive Zahl sein.").optional().nullable(),
@@ -51,7 +51,7 @@ export const SiteForm = ({ onSubmit, initialData, customers, employees, onCancel
       address: initialData?.address || "",
       customer_id: initialData?.customer_id || "",
       construction_manager_id: initialData?.construction_manager_id || null,
-      start_date: initialData?.start_date ? new Date(initialData.start_date).toISOString().split('T')[0] : "",
+      start_date: initialData?.start_date ? new Date(initialData.start_date).toISOString().split('T')[0] : null,
       end_date: initialData?.end_date ? new Date(initialData.end_date).toISOString().split('T')[0] : null,
       status: initialData?.status || "Geplant",
       planned_hours: initialData?.planned_hours || 0,
@@ -63,6 +63,7 @@ export const SiteForm = ({ onSubmit, initialData, customers, employees, onCancel
     const processedData = {
       ...data,
       construction_manager_id: data.construction_manager_id === '--none--' ? null : data.construction_manager_id,
+      start_date: data.start_date || null,
     };
     onSubmit(processedData);
   };
@@ -153,9 +154,9 @@ export const SiteForm = ({ onSubmit, initialData, customers, employees, onCancel
             name="start_date"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Startdatum</FormLabel>
+                <FormLabel>Startdatum (optional)</FormLabel>
                 <FormControl>
-                  <Input type="date" {...field} />
+                  <Input type="date" {...field} value={field.value ?? ''} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

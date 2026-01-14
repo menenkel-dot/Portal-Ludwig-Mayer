@@ -16,7 +16,7 @@ export type Site = {
   address: string;
   customer_id: string;
   construction_manager_id: string | null;
-  start_date: string;
+  start_date: string | null;
   end_date: string | null;
   status: 'Geplant' | 'Kalkuliert' | 'Geprüft' | 'In Arbeit' | 'Abgeschlossen';
   notes?: string;

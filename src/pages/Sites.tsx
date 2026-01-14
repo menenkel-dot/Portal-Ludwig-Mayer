@@ -107,9 +107,12 @@ const Sites = () => {
         } else if (sortConfig.key === 'status') {
           valA = statusOrder.indexOf(a.status);
           valB = statusOrder.indexOf(b.status);
+        } else if (sortConfig.key === 'start_date') {
+          valA = a.start_date || '';
+          valB = b.start_date || '';
         } else {
-          valA = a[sortConfig.key as keyof Site];
-          valB = b[sortConfig.key as keyof Site];
+          valA = a[sortConfig.key as keyof Site] || '';
+          valB = b[sortConfig.key as keyof Site] || '';
         }
         
         if (valA < valB) {
@@ -285,7 +288,7 @@ const Sites = () => {
                   </TableCell>
                   <TableCell>{site.customers?.name || "N/A"}</TableCell>
                   <TableCell>{site.employees ? `${site.employees.first_name} ${site.employees.last_name}` : "-"}</TableCell>
-                  <TableCell>{new Date(site.start_date).toLocaleDateString()}</TableCell>
+                  <TableCell>{site.start_date ? new Date(site.start_date).toLocaleDateString() : "-"}</TableCell>
                   <TableCell>
                     <Badge variant={
                       site.status === 'Abgeschlossen' ? 'secondary' :

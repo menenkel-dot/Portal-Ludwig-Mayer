@@ -77,7 +77,9 @@ const SiteDetail = () => {
                 <CalendarIcon className="h-5 w-5 text-muted-foreground mt-1" />
                 <div>
                   <p className="text-sm font-medium">Startdatum</p>
-                  <p className="text-sm text-muted-foreground">{format(new Date(site.start_date), "dd.MM.yyyy")}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {site.start_date ? format(new Date(site.start_date), "dd.MM.yyyy") : "Nicht festgelegt"}
+                  </p>
                 </div>
               </div>
               <div className="flex items-start space-x-3">
