@@ -23,7 +23,7 @@ import { Vehicle } from "@/types";
 import { NewVehicle } from "@/services/vehicleService";
 
 const formSchema = z.object({
-  license_plate: z.string().min(3, "Kennzeichen ist erforderlich."),
+  license_plate: z.string().optional().nullable(),
   vehicle_type: z.string().min(2, "Fahrzeugtyp ist erforderlich."),
   manufacturer: z.string().min(2, "Hersteller ist erforderlich."),
   model: z.string().min(1, "Modell ist erforderlich."),
@@ -94,9 +94,9 @@ export const VehicleForm = ({ onSubmit, initialData, onCancel, isLoading }: Vehi
             name="license_plate"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Kennzeichen</FormLabel>
+                <FormLabel>Kennzeichen (optional)</FormLabel>
                 <FormControl>
-                  <Input placeholder="B-XY 123" {...field} />
+                  <Input placeholder="B-XY 123" {...field} value={field.value ?? ''} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

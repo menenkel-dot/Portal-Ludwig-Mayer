@@ -38,7 +38,7 @@ export type Site = {
 
 export type Vehicle = {
   id: string;
-  license_plate: string;
+  license_plate: string | null;
   vehicle_type: string;
   manufacturer: string;
   model: string;
