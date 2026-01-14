@@ -19,8 +19,8 @@ const formSchema = z.object({
   name: z.string().min(2, "Name muss mindestens 2 Zeichen lang sein."),
   contact_person: z.string().min(2, "Ansprechpartner muss mindestens 2 Zeichen lang sein."),
   address: z.string().min(5, "Adresse muss mindestens 5 Zeichen lang sein."),
-  phone: z.string().min(5, "Telefonnummer ist erforderlich."),
-  email: z.string().email("Ungültige E-Mail-Adresse."),
+  phone: z.string().optional().nullable(),
+  email: z.string().email("Ungültige E-Mail-Adresse.").optional().or(z.literal("")).nullable(),
   notes: z.string().optional(),
 });
 
@@ -78,9 +78,9 @@ export const CustomerForm = ({ onSubmit, initialData, onCancel, isLoading }: Cus
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>E-Mail</FormLabel>
+              <FormLabel>E-Mail (optional)</FormLabel>
               <FormControl>
-                <Input placeholder="max@bau.de" {...field} />
+                <Input placeholder="max@bau.de" {...field} value={field.value ?? ''} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -91,9 +91,9 @@ export const CustomerForm = ({ onSubmit, initialData, onCancel, isLoading }: Cus
           name="phone"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Telefon</FormLabel>
+              <FormLabel>Telefon (optional)</FormLabel>
               <FormControl>
-                <Input placeholder="0123 456789" {...field} />
+                <Input placeholder="0123 456789" {...field} value={field.value ?? ''} />
               </FormControl>
               <FormMessage />
             </FormItem>
