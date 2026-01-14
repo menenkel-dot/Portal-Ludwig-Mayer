@@ -29,6 +29,7 @@ const formSchema = z.object({
   model: z.string().min(1, "Modell ist erforderlich."),
   status: z.enum(["Verfügbar", "Im Einsatz", "In Wartung"]),
   driver: z.string().min(3, "Fahrer ist erforderlich."),
+  first_registration: z.string().optional().nullable(),
   next_maintenance: z.string().optional().nullable(),
   notes: z.string().optional(),
 });
@@ -50,6 +51,7 @@ export const VehicleForm = ({ onSubmit, initialData, onCancel, isLoading }: Vehi
       model: initialData?.model || "",
       status: initialData?.status || "Verfügbar",
       driver: initialData?.driver || "",
+      first_registration: initialData?.first_registration ? new Date(initialData.first_registration).toISOString().split('T')[0] : null,
       next_maintenance: initialData?.next_maintenance ? new Date(initialData.next_maintenance).toISOString().split('T')[0] : null,
       notes: initialData?.notes || "",
     },
@@ -86,19 +88,34 @@ export const VehicleForm = ({ onSubmit, initialData, onCancel, isLoading }: Vehi
             )}
           />
         </div>
-        <FormField
-          control={form.control}
-          name="license_plate"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Kennzeichen</FormLabel>
-              <FormControl>
-                <Input placeholder="B-XY 123" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="license_plate"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Kennzeichen</FormLabel>
+                <FormControl>
+                  <Input placeholder="B-XY 123" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="first_registration"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Erstzulassung</FormLabel>
+                <FormControl>
+                  <Input type="date" {...field} value={field.value ?? ''} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
         <FormField
           control={form.control}
           name="vehicle_type"

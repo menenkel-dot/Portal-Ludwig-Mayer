@@ -13,6 +13,7 @@ import { MoreHorizontal, PlusCircle, Search, ArrowUpDown } from "lucide-react";
 import { VehicleForm } from "@/components/VehicleForm";
 import { showSuccess, showError } from "@/utils/toast";
 import { Badge } from "@/components/ui/badge";
+import { format } from "date-fns";
 
 type SortConfig = {
   key: keyof Vehicle;
@@ -53,6 +54,10 @@ const Fleet = () => {
       sortableItems.sort((a, b) => {
         const valA = a[sortConfig.key];
         const valB = b[sortConfig.key];
+        
+        if (valA === null || valA === undefined) return 1;
+        if (valB === null || valB === undefined) return -1;
+
         if (valA < valB) {
           return sortConfig.direction === 'ascending' ? -1 : 1;
         }
@@ -187,6 +192,11 @@ const Fleet = () => {
                 </Button>
               </TableHead>
               <TableHead>
+                <Button variant="ghost" onClick={() => requestSort('first_registration')}>
+                  Erstzulassung <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
+              <TableHead>
                 <Button variant="ghost" onClick={() => requestSort('vehicle_type')}>
                   Typ <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
@@ -210,6 +220,7 @@ const Fleet = () => {
                 <TableRow key={vehicle.id}>
                   <TableCell className="font-medium">{vehicle.manufacturer} {vehicle.model}</TableCell>
                   <TableCell>{vehicle.license_plate}</TableCell>
+                  <TableCell>{vehicle.first_registration ? format(new Date(vehicle.first_registration), "MM/yyyy") : "-"}</TableCell>
                   <TableCell>{vehicle.vehicle_type}</TableCell>
                   <TableCell>{vehicle.driver}</TableCell>
                   <TableCell>
@@ -236,7 +247,7 @@ const Fleet = () => {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center">
+                <TableCell colSpan={7} className="h-24 text-center">
                   Keine Ergebnisse gefunden.
                 </TableCell>
               </TableRow>

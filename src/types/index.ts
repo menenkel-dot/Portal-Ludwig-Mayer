@@ -44,6 +44,7 @@ export type Vehicle = {
   model: string;
   status: 'Verfügbar' | 'Im Einsatz' | 'In Wartung';
   driver: string;
+  first_registration: string | null;
   next_maintenance: string | null;
   notes?: string;
   created_at: string;
