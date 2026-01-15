@@ -125,7 +125,7 @@ export const SiteForm = ({ onSubmit, initialData, customers, employees, onCancel
                     <SelectItem value="--none--">Kein Bauführer</SelectItem>
                     {employees.map((employee) => (
                       <SelectItem key={employee.id} value={employee.id}>
-                        {employee.first_name} {employee.last_name}
+                        {employee.last_name} {employee.first_name}
                       </SelectItem>
                     ))}
                   </SelectContent>
