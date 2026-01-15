@@ -55,7 +55,7 @@ type SortConfig = {
   direction: 'ascending' | 'descending';
 } | null;
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 20;
 
 const statusOrder: (Site['status'])[] = ['Geplant', 'Kalkuliert', 'Geprüft', 'In Arbeit', 'Abgeschlossen'];
 
