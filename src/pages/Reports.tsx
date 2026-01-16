@@ -6,6 +6,8 @@ import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { FileDown } from "lucide-react";
 import {
   ComposedChart,
   BarChart,
@@ -20,10 +22,12 @@ import {
   Customized,
 } from "recharts";
 import { DateRange } from "react-day-picker";
-import { subDays } from "date-fns";
+import { subDays, format } from "date-fns";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import WeeklyEmployeeReport from "@/components/WeeklyEmployeeReport";
 import ProjectCostReport from "@/components/ProjectCostReport";
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const RenderThresholdLines = (props: any) => {
   const { data, xAxis, yAxis } = props;
@@ -64,6 +68,7 @@ const Reports = () => {
     from: subDays(new Date(), 29),
     to: new Date(),
   });
+  const [activeTab, setActiveTab] = useState("profitability");
 
   const { data: timeEntries, isLoading: isLoadingEntries } = useQuery({
     queryKey: ["timeEntries"],
@@ -83,7 +88,7 @@ const Reports = () => {
   const filteredTimeEntries = useMemo(() => {
     if (!timeEntries || !dateRange?.from) return [];
     const from = dateRange.from;
-    const to = dateRange.to ? new Date(dateRange.to.setHours(23, 59, 59, 999)) : new Date();
+    const to = dateRange.to ? new Date(new Date(dateRange.to).setHours(23, 59, 59, 999)) : new Date();
 
     return timeEntries.filter(entry => {
       const entryDate = new Date(entry.date);
@@ -142,15 +147,70 @@ const Reports = () => {
       .sort((a, b) => b.Soll - a.Soll);
   }, [sites, timeEntries]);
 
+  const exportPDF = () => {
+    const doc = new jsPDF();
+    const dateStr = dateRange?.from ? `${format(dateRange.from, 'dd.MM.yyyy')} - ${dateRange.to ? format(dateRange.to, 'dd.MM.yyyy') : 'Heute'}` : '';
+    
+    doc.setFontSize(18);
+    doc.text("Bericht - Ludwig Mayer Bau GmbH", 14, 20);
+    doc.setFontSize(10);
+    doc.text(`Zeitraum: ${dateStr}`, 14, 28);
+    doc.text(`Erstellt am: ${format(new Date(), 'dd.MM.yyyy HH:mm')}`, 14, 33);
+
+    let startY = 40;
+
+    if (activeTab === "profitability") {
+      doc.setFontSize(14);
+      doc.text("Soll-Ist Stundenvergleich", 14, startY);
+      autoTable(doc, {
+        startY: startY + 5,
+        head: [['Baustelle', 'Soll (h)', 'Ist (h)', 'Differenz (h)']],
+        body: projectHourComparison.map(p => [
+          p.name, 
+          p.Soll.toFixed(2), 
+          p.Ist.toFixed(2), 
+          (p.Soll - p.Ist).toFixed(2)
+        ]),
+        theme: 'striped'
+      });
+    } else if (activeTab === "site_hours") {
+      doc.setFontSize(14);
+      doc.text("Stunden pro Baustelle", 14, startY);
+      autoTable(doc, {
+        startY: startY + 5,
+        head: [['Baustelle', 'Stunden (h)']],
+        body: hoursPerSite.map(h => [h.name, h.Stunden.toFixed(2)]),
+        theme: 'striped'
+      });
+    } else if (activeTab === "employee_hours") {
+      doc.setFontSize(14);
+      doc.text("Mitarbeiter-Auslastung", 14, startY);
+      autoTable(doc, {
+        startY: startY + 5,
+        head: [['Mitarbeiter', 'Gesamtstunden (h)']],
+        body: hoursPerEmployee.map(h => [h.name, h.Stunden.toFixed(2)]),
+        theme: 'striped'
+      });
+    }
+
+    doc.save(`Bericht_${activeTab}_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+  };
+
   if (isLoading) return <div>Lade Reports...</div>;
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <h1 className="text-3xl font-bold">Reports</h1>
-        <DateRangePicker date={dateRange} onDateChange={setDateRange} />
+        <div className="flex flex-wrap items-center gap-2">
+          <DateRangePicker date={dateRange} onDateChange={setDateRange} />
+          <Button variant="outline" onClick={exportPDF}>
+            <FileDown className="mr-2 h-4 w-4" />
+            PDF Export
+          </Button>
+        </div>
       </div>
-      <Tabs defaultValue="profitability">
+      <Tabs defaultValue="profitability" onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="profitability">Soll-Ist Stunden</TabsTrigger>
           <TabsTrigger value="site_hours">Stunden/Baustelle</TabsTrigger>
