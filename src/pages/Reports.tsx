@@ -22,7 +22,8 @@ import {
   Customized,
 } from "recharts";
 import { DateRange } from "react-day-picker";
-import { subDays, format } from "date-fns";
+import { subDays, format, getDay } from "date-fns";
+import { de } from "date-fns/locale";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import WeeklyEmployeeReport from "@/components/WeeklyEmployeeReport";
 import ProjectCostReport from "@/components/ProjectCostReport";
@@ -118,7 +119,7 @@ const Reports = () => {
       return acc;
     }, {} as Record<string, number>);
     return employees.map(emp => ({
-      name: `${emp.first_name} ${emp.last_name}`,
+      name: `${emp.last_name}, ${emp.first_name}`,
       Stunden: parseFloat((employeeHours[emp.id] || 0).toFixed(2)),
     })).sort((a, b) => b.Stunden - a.Stunden);
   }, [filteredTimeEntries, employees]);
@@ -150,6 +151,7 @@ const Reports = () => {
   const exportPDF = () => {
     const doc = new jsPDF();
     const dateStr = dateRange?.from ? `${format(dateRange.from, 'dd.MM.yyyy')} - ${dateRange.to ? format(dateRange.to, 'dd.MM.yyyy') : 'Heute'}` : '';
+    const formatCurrency = (amount: number) => new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(amount);
     
     doc.setFontSize(18);
     doc.text("Bericht - Ludwig Mayer Bau GmbH", 14, 20);
@@ -189,6 +191,51 @@ const Reports = () => {
         startY: startY + 5,
         head: [['Mitarbeiter', 'Gesamtstunden (h)']],
         body: hoursPerEmployee.map(h => [h.name, h.Stunden.toFixed(2)]),
+        theme: 'striped'
+      });
+    } else if (activeTab === "weekly_employee_report") {
+      doc.setFontSize(14);
+      doc.text("Mitarbeiter Gesamtübersicht", 14, startY);
+      
+      const reportData = filteredTimeEntries.reduce((acc, entry) => {
+        const label = entry.entry_type === 'Arbeit' ? (entry.sites?.name || 'Ohne Baustelle') : entry.entry_type;
+        const employee = employees?.find(e => e.id === entry.employee_id);
+        const empName = employee ? `${employee.last_name}, ${employee.first_name}` : 'Unbekannt';
+        const key = `${empName}-${label}`;
+        
+        if (!acc[key]) acc[key] = { name: empName, type: label, total: 0 };
+        acc[key].total += entry.hours_worked;
+        return acc;
+      }, {} as Record<string, any>);
+
+      autoTable(doc, {
+        startY: startY + 5,
+        head: [['Mitarbeiter', 'Projekt / Typ', 'Summe (h)']],
+        body: Object.values(reportData).map((d: any) => [d.name, d.type, d.total.toFixed(2)]),
+        theme: 'striped'
+      });
+    } else if (activeTab === "project_cost") {
+      doc.setFontSize(14);
+      doc.text("Projektauswertung (Kosten)", 14, startY);
+      
+      const projects = filteredTimeEntries
+        .filter(e => e.entry_type === 'Arbeit' && e.site_id)
+        .reduce((acc, entry) => {
+          const siteId = entry.site_id!;
+          if (!acc[siteId]) acc[siteId] = { name: entry.sites?.name || 'Unbekannt', costs: 0, hours: 0 };
+          
+          const emp = employees?.find(e => e.id === entry.employee_id);
+          if (emp) {
+            acc[siteId].hours += entry.hours_worked;
+            acc[siteId].costs += (entry.hours_worked * emp.hourly_rate);
+          }
+          return acc;
+        }, {} as Record<string, any>);
+
+      autoTable(doc, {
+        startY: startY + 5,
+        head: [['Projekt', 'Gesamtstunden (h)', 'Gesamtkosten (€)']],
+        body: Object.values(projects).map((p: any) => [p.name, p.hours.toFixed(2), formatCurrency(p.costs)]),
         theme: 'striped'
       });
     }
