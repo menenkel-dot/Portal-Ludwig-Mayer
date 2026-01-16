@@ -166,7 +166,7 @@ export const WeeklyTimeSheet = () => {
                         }}
                       >
                         <Check className={cn("mr-2 h-4 w-4", selectedEmployeeIds.includes(employee.id) ? "opacity-100" : "opacity-0")} />
-                        {employee.first_name} {employee.last_name}
+                        {employee.last_name}, {employee.first_name}
                       </CommandItem>
                     ))}
                   </CommandGroup>
