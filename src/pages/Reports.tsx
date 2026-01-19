@@ -149,7 +149,8 @@ const Reports = () => {
   }, [sites, timeEntries]);
 
   const exportPDF = () => {
-    const doc = new jsPDF(activeTab === "weekly_employee_report" ? 'l' : 'p', 'mm', 'a4');
+    const isLandscape = activeTab === "weekly_employee_report" || activeTab === "project_cost";
+    const doc = new jsPDF(isLandscape ? 'l' : 'p', 'mm', 'a4');
     const dateStr = dateRange?.from ? `${format(dateRange.from, 'dd.MM.yyyy')} - ${dateRange.to ? format(dateRange.to, 'dd.MM.yyyy') : 'Heute'}` : '';
     const formatCurrency = (amount: number) => new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(amount);
     const formatHours = (h: number) => h > 0 ? h.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "";
@@ -256,25 +257,73 @@ const Reports = () => {
       doc.setFontSize(14);
       doc.text("Projektauswertung (Kosten)", 14, startY);
       
-      const projects = filteredTimeEntries
+      const interval = { start: dateRange!.from!, end: dateRange!.to || new Date() };
+      const daysInRange = eachDayOfInterval(interval);
+      const dayHeaders = daysInRange.map(d => `${format(d, 'EE', { locale: de })}\n${format(d, 'dd.MM')}`);
+
+      const siteGroups = filteredTimeEntries
         .filter(e => e.entry_type === 'Arbeit' && e.site_id)
         .reduce((acc, entry) => {
           const siteId = entry.site_id!;
-          if (!acc[siteId]) acc[siteId] = { name: entry.sites?.name || 'Unbekannt', costs: 0, hours: 0 };
+          const siteName = entry.sites?.name || 'Unbekannt';
+          if (!acc[siteId]) acc[siteId] = { name: siteName, employees: {} };
           
-          const emp = employees?.find(e => e.id === entry.employee_id);
-          if (emp) {
-            acc[siteId].hours += entry.hours_worked;
-            acc[siteId].costs += (entry.hours_worked * emp.hourly_rate);
+          const employee = employees?.find(e => e.id === entry.employee_id);
+          if (employee) {
+            if (!acc[siteId].employees[employee.id]) {
+              acc[siteId].employees[employee.id] = {
+                name: `${employee.last_name}, ${employee.first_name}`,
+                rate: employee.hourly_rate,
+                days: daysInRange.map(() => 0),
+                totalHours: 0
+              };
+            }
+            const dayIdx = daysInRange.findIndex(d => isSameDay(d, new Date(entry.date)));
+            if (dayIdx !== -1) {
+              acc[siteId].employees[employee.id].days[dayIdx] += entry.hours_worked;
+              acc[siteId].employees[employee.id].totalHours += entry.hours_worked;
+            }
           }
           return acc;
         }, {} as Record<string, any>);
 
-      autoTable(doc, {
-        startY: startY + 5,
-        head: [['Projekt', 'Gesamtstunden (h)', 'Gesamtkosten (€)']],
-        body: Object.values(projects).map((p: any) => [p.name, p.hours.toFixed(2), formatCurrency(p.costs)]),
-        theme: 'striped'
+      Object.values(siteGroups).forEach((site: any) => {
+        if (startY > doc.internal.pageSize.height - 40) { doc.addPage(); startY = 20; }
+        
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Bauv. : ${site.name}`, 14, startY);
+        startY += 6;
+
+        const tableBody = Object.values(site.employees).sort((a: any, b: any) => a.name.localeCompare(b.name)).map((emp: any) => [
+          emp.name,
+          ...emp.days.map((h: number) => formatHours(h)),
+          emp.totalHours.toLocaleString('de-DE', { minimumFractionDigits: 2 }),
+          emp.rate.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+          (emp.totalHours * emp.rate).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        ]);
+
+        const totalHours = Object.values(site.employees).reduce((sum: number, emp: any) => sum + emp.totalHours, 0);
+        const totalCost = Object.values(site.employees).reduce((sum: number, emp: any) => sum + (emp.totalHours * emp.rate), 0);
+
+        autoTable(doc, {
+          startY,
+          head: [['Arbeitnehmer', ...dayHeaders, 'Summe', '/Std.', 'Gesamt']],
+          body: tableBody,
+          theme: 'grid',
+          headStyles: { fillColor: [241, 245, 249], textColor: [71, 85, 105], fontSize: 8, halign: 'center' },
+          styles: { fontSize: 8 },
+          foot: [['', ...daysInRange.map(() => ''), 'Std. / Kosten :', totalHours.toLocaleString('de-DE', { minimumFractionDigits: 2 }), '', totalCost.toLocaleString('de-DE', { minimumFractionDigits: 2 })]],
+          footStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'right' },
+          columnStyles: {
+            0: { halign: 'left' },
+            [dayHeaders.length + 1]: { fontStyle: 'bold', halign: 'right' },
+            [dayHeaders.length + 2]: { halign: 'right' },
+            [dayHeaders.length + 3]: { fontStyle: 'bold', halign: 'right' }
+          }
+        });
+
+        startY = (doc as any).lastAutoTable.finalY + 12;
       });
     }
 
