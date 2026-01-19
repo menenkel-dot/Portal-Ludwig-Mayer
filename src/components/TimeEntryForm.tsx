@@ -74,6 +74,10 @@ export const TimeEntryForm = ({ onSubmit, initialData, employees, sites, onCance
     }
   }, [entryType, form, initialData]);
 
+  const sortedEmployees = React.useMemo(() => {
+    return [...employees].sort((a, b) => a.last_name.localeCompare(b.last_name));
+  }, [employees]);
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -123,9 +127,9 @@ export const TimeEntryForm = ({ onSubmit, initialData, employees, sites, onCance
                   <SelectTrigger><SelectValue placeholder="Mitarbeiter auswählen" /></SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {employees.map((employee) => (
+                  {sortedEmployees.map((employee) => (
                     <SelectItem key={employee.id} value={employee.id}>
-                      {employee.first_name} {employee.last_name}
+                      {employee.last_name}, {employee.first_name}
                     </SelectItem>
                   ))}
                 </SelectContent>
