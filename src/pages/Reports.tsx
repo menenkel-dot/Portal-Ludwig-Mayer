@@ -22,7 +22,7 @@ import {
   Customized,
 } from "recharts";
 import { DateRange } from "react-day-picker";
-import { subDays, format, getDay } from "date-fns";
+import { subDays, format, getDay, eachDayOfInterval, isSameDay } from "date-fns";
 import { de } from "date-fns/locale";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import WeeklyEmployeeReport from "@/components/WeeklyEmployeeReport";
@@ -149,10 +149,11 @@ const Reports = () => {
   }, [sites, timeEntries]);
 
   const exportPDF = () => {
-    const doc = new jsPDF();
+    const doc = new jsPDF(activeTab === "weekly_employee_report" ? 'l' : 'p', 'mm', 'a4');
     const dateStr = dateRange?.from ? `${format(dateRange.from, 'dd.MM.yyyy')} - ${dateRange.to ? format(dateRange.to, 'dd.MM.yyyy') : 'Heute'}` : '';
     const formatCurrency = (amount: number) => new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(amount);
-    
+    const formatHours = (h: number) => h > 0 ? h.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "";
+
     doc.setFontSize(18);
     doc.text("Bericht - Ludwig Mayer Bau GmbH", 14, 20);
     doc.setFontSize(10);
@@ -197,22 +198,59 @@ const Reports = () => {
       doc.setFontSize(14);
       doc.text("Mitarbeiter Gesamtübersicht", 14, startY);
       
+      const interval = { start: dateRange!.from!, end: dateRange!.to || new Date() };
+      const daysInRange = eachDayOfInterval(interval);
+      
       const reportData = filteredTimeEntries.reduce((acc, entry) => {
         const label = entry.entry_type === 'Arbeit' ? (entry.sites?.name || 'Ohne Baustelle') : entry.entry_type;
         const employee = employees?.find(e => e.id === entry.employee_id);
         const empName = employee ? `${employee.last_name}, ${employee.first_name}` : 'Unbekannt';
         const key = `${empName}-${label}`;
         
-        if (!acc[key]) acc[key] = { name: empName, type: label, total: 0 };
-        acc[key].total += entry.hours_worked;
+        if (!acc[key]) {
+          acc[key] = { 
+            name: empName, 
+            type: label, 
+            days: daysInRange.map(() => 0),
+            total: 0,
+            count: 0
+          };
+        }
+        
+        const dayIdx = daysInRange.findIndex(d => isSameDay(d, new Date(entry.date)));
+        if (dayIdx !== -1) {
+          acc[key].days[dayIdx] += entry.hours_worked;
+          acc[key].total += entry.hours_worked;
+        }
         return acc;
       }, {} as Record<string, any>);
 
+      const tableData = Object.values(reportData).sort((a: any, b: any) => a.name.localeCompare(b.name)).map((row: any) => {
+        const daysCount = row.days.filter((h: number) => h > 0).length;
+        return [
+          row.name,
+          row.type,
+          ...row.days.map((h: number) => formatHours(h)),
+          row.total.toLocaleString('de-DE', { minimumFractionDigits: 2 }),
+          daysCount
+        ];
+      });
+
+      const dayHeaders = daysInRange.map(d => `${format(d, 'EE', { locale: de })}\n${format(d, 'dd.MM')}`);
+
       autoTable(doc, {
         startY: startY + 5,
-        head: [['Mitarbeiter', 'Projekt / Typ', 'Summe (h)']],
-        body: Object.values(reportData).map((d: any) => [d.name, d.type, d.total.toFixed(2)]),
-        theme: 'striped'
+        head: [['Mitarbeiter', 'Projekt / Typ', ...dayHeaders, 'Summe', 'Tage']],
+        body: tableData,
+        theme: 'grid',
+        headStyles: { fillColor: [241, 245, 249], textColor: [71, 85, 105], fontSize: 8, halign: 'center' },
+        styles: { fontSize: 8 },
+        columnStyles: {
+          0: { fontStyle: 'bold', halign: 'left' },
+          1: { halign: 'left' },
+          [dayHeaders.length + 2]: { fontStyle: 'bold', halign: 'right' },
+          [dayHeaders.length + 3]: { halign: 'right' }
+        }
       });
     } else if (activeTab === "project_cost") {
       doc.setFontSize(14);
