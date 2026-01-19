@@ -152,7 +152,6 @@ const Reports = () => {
     const isLandscape = activeTab === "weekly_employee_report" || activeTab === "project_cost";
     const doc = new jsPDF(isLandscape ? 'l' : 'p', 'mm', 'a4');
     const dateStr = dateRange?.from ? `${format(dateRange.from, 'dd.MM.yyyy')} - ${dateRange.to ? format(dateRange.to, 'dd.MM.yyyy') : 'Heute'}` : '';
-    const formatCurrency = (amount: number) => new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(amount);
     const formatHours = (h: number) => h > 0 ? h.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "";
 
     doc.setFontSize(18);
@@ -161,7 +160,7 @@ const Reports = () => {
     doc.text(`Zeitraum: ${dateStr}`, 14, 28);
     doc.text(`Erstellt am: ${format(new Date(), 'dd.MM.yyyy HH:mm')}`, 14, 33);
 
-    let startY = 40;
+    let startY = 45;
 
     if (activeTab === "profitability") {
       doc.setFontSize(14);
@@ -198,6 +197,7 @@ const Reports = () => {
     } else if (activeTab === "weekly_employee_report") {
       doc.setFontSize(14);
       doc.text("Mitarbeiter Gesamtübersicht", 14, startY);
+      startY += 8;
       
       const interval = { start: dateRange!.from!, end: dateRange!.to || new Date() };
       const daysInRange = eachDayOfInterval(interval);
@@ -240,7 +240,7 @@ const Reports = () => {
       const dayHeaders = daysInRange.map(d => `${format(d, 'EE', { locale: de })}\n${format(d, 'dd.MM')}`);
 
       autoTable(doc, {
-        startY: startY + 5,
+        startY: startY,
         head: [['Mitarbeiter', 'Projekt / Typ', ...dayHeaders, 'Summe', 'Tage']],
         body: tableData,
         theme: 'grid',
@@ -256,6 +256,7 @@ const Reports = () => {
     } else if (activeTab === "project_cost") {
       doc.setFontSize(14);
       doc.text("Projektauswertung (Kosten)", 14, startY);
+      startY += 10;
       
       const interval = { start: dateRange!.from!, end: dateRange!.to || new Date() };
       const daysInRange = eachDayOfInterval(interval);
@@ -288,7 +289,7 @@ const Reports = () => {
         }, {} as Record<string, any>);
 
       Object.values(siteGroups).forEach((site: any) => {
-        if (startY > doc.internal.pageSize.height - 40) { doc.addPage(); startY = 20; }
+        if (startY > doc.internal.pageSize.height - 50) { doc.addPage(); startY = 20; }
         
         doc.setFontSize(11);
         doc.setFont('helvetica', 'bold');
@@ -307,7 +308,7 @@ const Reports = () => {
         const totalCost = Object.values(site.employees).reduce((sum: number, emp: any) => sum + (emp.totalHours * emp.rate), 0);
 
         autoTable(doc, {
-          startY,
+          startY: startY,
           head: [['Arbeitnehmer', ...dayHeaders, 'Summe', '/Std.', 'Gesamt']],
           body: tableBody,
           theme: 'grid',
