@@ -200,7 +200,8 @@ const Reports = () => {
       startY += 8;
       
       const interval = { start: dateRange!.from!, end: dateRange!.to || new Date() };
-      const daysInRange = eachDayOfInterval(interval);
+      // Nur Arbeitstage (Mo-Fr) einbeziehen
+      const daysInRange = eachDayOfInterval(interval).filter(d => getDay(d) !== 0 && getDay(d) !== 6);
       
       const reportData = filteredTimeEntries.reduce((acc, entry) => {
         const label = entry.entry_type === 'Arbeit' ? (entry.sites?.name || 'Ohne Baustelle') : entry.entry_type;
@@ -259,7 +260,8 @@ const Reports = () => {
       startY += 10;
       
       const interval = { start: dateRange!.from!, end: dateRange!.to || new Date() };
-      const daysInRange = eachDayOfInterval(interval);
+      // Nur Arbeitstage (Mo-Fr) einbeziehen
+      const daysInRange = eachDayOfInterval(interval).filter(d => getDay(d) !== 0 && getDay(d) !== 6);
       const dayHeaders = daysInRange.map(d => `${format(d, 'EE', { locale: de })}\n${format(d, 'dd.MM')}`);
 
       const siteGroups = filteredTimeEntries
