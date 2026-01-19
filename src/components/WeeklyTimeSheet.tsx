@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getSites } from "@/services/siteService";
 import { getEmployees } from "@/services/employeeService";
-import { getTimeEntriesForSiteAndWeek, upsertTimeEntries, deleteTimeEntries } from "@/services/timeTrackingService";
+import { getTimeEntriesForSiteAndWeek, saveWeeklyTimeEntries } from "@/services/timeTrackingService";
 import { Site, Employee, TimeEntry } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,13 +16,18 @@ import { startOfWeek, addWeeks, subWeeks, format, eachDayOfInterval } from "date
 import { de } from "date-fns/locale";
 import { showSuccess, showError } from "@/utils/toast";
 import { cn } from "@/lib/utils";
+import { Skeleton } from "./ui/skeleton";
+
+// Define a type for the internal state structure to hold hours and associated IDs
+type EmployeeDayHours = Record<string, { hours: string, existingIds: string[] }>;
+type HoursState = Record<string, EmployeeDayHours>; // { [employeeId]: { [dateStr]: { hours, existingIds } } }
 
 export const WeeklyTimeSheet = () => {
   const queryClient = useQueryClient();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedSiteId, setSelectedSiteId] = useState<string | null>(null);
   const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<string[]>([]);
-  const [hours, setHours] = useState<Record<string, Record<string, string>>>({});
+  const [hoursState, setHoursState] = useState<HoursState>({});
   const [open, setOpen] = useState(false);
 
   const weekStart = useMemo(() => startOfWeek(currentDate, { weekStartsOn: 1 }), [currentDate]);
@@ -42,34 +47,48 @@ export const WeeklyTimeSheet = () => {
 
   useEffect(() => {
     if (timeEntries) {
-      const newHours: Record<string, Record<string, string>> = {};
+      const newHoursState: HoursState = {};
+      
       selectedEmployeeIds.forEach(empId => {
-        newHours[empId] = {};
+        newHoursState[empId] = {};
         weekDays.forEach(day => {
           const dateStr = format(day, 'yyyy-MM-dd');
-          const entry = timeEntries.find(e => e.employee_id === empId && e.date.startsWith(dateStr));
-          newHours[empId][dateStr] = entry ? String(entry.hours_worked) : '';
+          
+          // Aggregate all entries for this employee, day, and selected site
+          const entriesForDay = timeEntries.filter(e => 
+            e.employee_id === empId && 
+            e.date.startsWith(dateStr) && 
+            e.site_id === selectedSiteId
+          );
+          
+          const totalHours = entriesForDay.reduce((sum, entry) => sum + entry.hours_worked, 0);
+          const existingIds = entriesForDay.map(e => e.id);
+
+          newHoursState[empId][dateStr] = {
+            hours: totalHours > 0 ? String(totalHours) : '',
+            existingIds: existingIds,
+          };
         });
       });
-      setHours(newHours);
+      setHoursState(newHoursState);
     }
-  }, [timeEntries, selectedEmployeeIds, weekDays]);
+  }, [timeEntries, selectedEmployeeIds, weekDays, selectedSiteId]);
 
-  const upsertMutation = useMutation({
-    mutationFn: upsertTimeEntries,
-    onError: (error: Error) => showError(error.message),
-  });
-  const deleteMutation = useMutation({
-    mutationFn: deleteTimeEntries,
+  const saveMutation = useMutation({
+    mutationFn: saveWeeklyTimeEntries,
     onError: (error: Error) => showError(error.message),
   });
 
   const handleHourChange = (employeeId: string, date: string, value: string) => {
-    setHours(prev => ({
+    setHoursState(prev => ({
       ...prev,
       [employeeId]: {
         ...prev[employeeId],
-        [date]: value,
+        [date]: {
+          ...prev[employeeId]?.[date],
+          hours: value,
+          // existingIds remain unchanged until save/refetch
+        },
       },
     }));
   };
@@ -77,34 +96,27 @@ export const WeeklyTimeSheet = () => {
   const handleSave = async () => {
     if (!selectedSiteId) return;
 
-    const entriesToUpsert: Partial<TimeEntry>[] = [];
-    const entryIdsToDelete: string[] = [];
-    const originalEntries = timeEntries || [];
+    const entriesToSave: { employee_id: string, site_id: string, date: string, hours_worked: number, existing_ids: string[] }[] = [];
 
-    Object.entries(hours).forEach(([employeeId, dayHours]) => {
-      Object.entries(dayHours).forEach(([date, hourString]) => {
+    Object.entries(hoursState).forEach(([employeeId, dayEntries]) => {
+      Object.entries(dayEntries).forEach(([date, { hours: hourString, existingIds }]) => {
         const hourValue = parseFloat(hourString.replace(',', '.') || '0');
-        const originalEntry = originalEntries.find(e => e.employee_id === employeeId && e.date.startsWith(date));
-
-        if (hourValue > 0) {
-          entriesToUpsert.push({
-            employee_id: employeeId,
-            site_id: selectedSiteId,
-            date: date,
-            hours_worked: hourValue,
-            entry_type: 'Arbeit',
-          });
-        } else if (originalEntry) {
-          entryIdsToDelete.push(originalEntry.id);
+        
+        // We only need to save/delete if the hours changed OR if there are existing entries to clear.
+        if (hourValue > 0 || existingIds.length > 0) {
+            entriesToSave.push({
+                employee_id: employeeId,
+                site_id: selectedSiteId,
+                date: date,
+                hours_worked: hourValue,
+                existing_ids: existingIds,
+            });
         }
       });
     });
 
     try {
-      await Promise.all([
-        upsertMutation.mutateAsync(entriesToUpsert),
-        deleteMutation.mutateAsync(entryIdsToDelete)
-      ]);
+      await saveMutation.mutateAsync(entriesToSave);
       showSuccess("Zeiten erfolgreich gespeichert.");
       queryClient.invalidateQueries({ queryKey: ["weeklyTimeEntries", selectedSiteId, format(weekStart, "yyyy-MM-dd")] });
       queryClient.invalidateQueries({ queryKey: ["timeEntries"] });
@@ -116,11 +128,11 @@ export const WeeklyTimeSheet = () => {
   const employeeMap = useMemo(() => new Map(employees?.map(e => [e.id, e])), [employees]);
   const weekTotals = useMemo(() => {
     const totals: Record<string, number> = {};
-    Object.entries(hours).forEach(([employeeId, dayHours]) => {
-      totals[employeeId] = Object.values(dayHours).reduce((sum, h) => sum + (parseFloat(h.replace(',', '.') || '0')), 0);
+    Object.entries(hoursState).forEach(([employeeId, dayHours]) => {
+      totals[employeeId] = Object.values(dayHours).reduce((sum, { hours: h }) => sum + (parseFloat(h.replace(',', '.') || '0')), 0);
     });
     return totals;
-  }, [hours]);
+  }, [hoursState]);
 
   return (
     <Card>
@@ -215,7 +227,7 @@ export const WeeklyTimeSheet = () => {
                                   type="number"
                                   step="0.25"
                                   className="text-center"
-                                  value={hours[empId]?.[dateStr] || ''}
+                                  value={hoursState[empId]?.[dateStr]?.hours || ''}
                                   onChange={e => handleHourChange(empId, dateStr, e.target.value)}
                                 />
                               </TableCell>
@@ -230,8 +242,8 @@ export const WeeklyTimeSheet = () => {
               </Table>
             </div>
             <div className="flex justify-end">
-              <Button onClick={handleSave} disabled={upsertMutation.isPending || deleteMutation.isPending}>
-                {upsertMutation.isPending || deleteMutation.isPending ? "Speichern..." : "Woche speichern"}
+              <Button onClick={handleSave} disabled={saveMutation.isPending}>
+                {saveMutation.isPending ? "Speichern..." : "Woche speichern"}
               </Button>
             </div>
           </>

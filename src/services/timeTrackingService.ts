@@ -89,33 +89,50 @@ export const deleteTimeEntry = async (id: string) => {
   return true;
 };
 
-export const upsertTimeEntries = async (entries: Partial<TimeEntry>[]) => {
-  if (entries.length === 0) return [];
-  const { data, error } = await supabase
-    .from('time_entries')
-    .upsert(entries, { onConflict: 'employee_id,date' })
-    .select();
+export const saveWeeklyTimeEntries = async (entries: { employee_id: string, site_id: string, date: string, hours_worked: number, existing_ids: string[] }[]) => {
+  const entriesToInsert: NewTimeEntry[] = [];
+  const entryIdsToDelete: string[] = [];
 
-  if (error) {
-    console.error('Error upserting time entries:', error);
-    if (error.message.includes('duplicate key value violates unique constraint')) {
-        throw new Error('Für einen oder mehrere Tage existiert bereits ein Eintrag (z.B. Urlaub). Bitte entfernen Sie zuerst den bestehenden Eintrag.');
+  entries.forEach(entry => {
+    entryIdsToDelete.push(...entry.existing_ids);
+    if (entry.hours_worked > 0) {
+      entriesToInsert.push({
+        employee_id: entry.employee_id,
+        site_id: entry.site_id,
+        date: entry.date,
+        hours_worked: entry.hours_worked,
+        entry_type: 'Arbeit',
+        description: undefined,
+      });
     }
-    throw new Error(error.message);
+  });
+
+  // 1. Delete all existing entries that are being replaced or zeroed out
+  if (entryIdsToDelete.length > 0) {
+    const { error: deleteError } = await supabase
+      .from('time_entries')
+      .delete()
+      .in('id', entryIdsToDelete);
+
+    if (deleteError) {
+      console.error('Error deleting old time entries:', deleteError);
+      throw new Error(deleteError.message);
+    }
   }
-  return data;
-};
 
-export const deleteTimeEntries = async (entryIds: string[]) => {
-    if (entryIds.length === 0) return true;
-    const { error } = await supabase
-        .from('time_entries')
-        .delete()
-        .in('id', entryIds);
+  // 2. Insert new entries (only those with hours > 0)
+  if (entriesToInsert.length > 0) {
+    const { data, error: insertError } = await supabase
+      .from('time_entries')
+      .insert(entriesToInsert)
+      .select();
 
-    if (error) {
-        console.error('Error deleting time entries:', error);
-        throw new Error(error.message);
+    if (insertError) {
+      console.error('Error inserting new time entries:', insertError);
+      throw new Error(insertError.message);
     }
-    return true;
-}
+    return data;
+  }
+  
+  return [];
+};
