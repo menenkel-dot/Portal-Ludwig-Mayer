@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getUsers, createUser, updateUser, NewUserPayload, UpdateUserPayload } from "@/services/userService";
+import { getUsers, createUser, updateUser, resetUserPassword, NewUserPayload, UpdateUserPayload } from "@/services/userService";
 import { AppUser } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { PlusCircle, MoreHorizontal } from "lucide-react";
+import { PlusCircle, MoreHorizontal, LockKeyhole } from "lucide-react";
 import { UserForm } from "@/components/UserForm";
+import { ResetPasswordForm } from "@/components/ResetPasswordForm";
 import { showSuccess, showError } from "@/utils/toast";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
@@ -15,6 +16,7 @@ import { format } from "date-fns";
 const Users = () => {
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isPasswordResetOpen, setIsPasswordResetOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<AppUser | null>(null);
 
   const { data: users, isLoading } = useQuery({
@@ -51,6 +53,18 @@ const Users = () => {
     }
   });
 
+  const resetPasswordMutation = useMutation({
+    mutationFn: resetUserPassword,
+    onSuccess: () => {
+      showSuccess("Passwort erfolgreich zurückgesetzt.");
+      setIsPasswordResetOpen(false);
+      setSelectedUser(null);
+    },
+    onError: (error: Error) => {
+      showError(error.message);
+    },
+  });
+
   const handleFormSubmit = (data: any) => {
     const role = data.isAdmin ? 'admin' : 'user';
     const permissions = data.isAdmin ? [] : data.permissions; // Admin role implies all permissions, so we send an empty array or the actual list
@@ -75,9 +89,20 @@ const Users = () => {
     }
   };
 
+  const handlePasswordResetSubmit = (newPassword: string) => {
+    if (selectedUser) {
+      resetPasswordMutation.mutate({ userId: selectedUser.id, newPassword });
+    }
+  };
+
   const openDialog = (user: AppUser | null) => {
     setSelectedUser(user);
     setIsDialogOpen(true);
+  };
+
+  const openPasswordReset = (user: AppUser) => {
+    setSelectedUser(user);
+    setIsPasswordResetOpen(true);
   };
 
   if (isLoading) return <div>Lade Benutzer...</div>;
@@ -140,6 +165,9 @@ const Users = () => {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => openDialog(user)}>Bearbeiten</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => openPasswordReset(user)}>
+                          <LockKeyhole className="mr-2 h-4 w-4" /> Passwort zurücksetzen
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -155,6 +183,19 @@ const Users = () => {
           </TableBody>
         </Table>
       </div>
+
+      <Dialog open={isPasswordResetOpen} onOpenChange={(open) => { if (!open) setSelectedUser(null); setIsPasswordResetOpen(open); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Passwort zurücksetzen für {selectedUser?.email}</DialogTitle>
+          </DialogHeader>
+          <ResetPasswordForm
+            onSubmit={handlePasswordResetSubmit}
+            onCancel={() => setIsPasswordResetOpen(false)}
+            isLoading={resetPasswordMutation.isPending}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

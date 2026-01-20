@@ -16,6 +16,11 @@ export type UpdateUserPayload = {
     role?: 'admin' | 'user';
 }
 
+export type ResetPasswordPayload = {
+    userId: string;
+    newPassword: string;
+}
+
 export const getUsers = async (): Promise<AppUser[]> => {
   const { data, error } = await supabase.functions.invoke('get-users');
 
@@ -45,6 +50,18 @@ export const updateUser = async (userData: UpdateUserPayload) => {
 
     if (error) {
         console.error('Error updating user:', error);
+        throw new Error(error.message);
+    }
+    return data;
+}
+
+export const resetUserPassword = async (payload: ResetPasswordPayload) => {
+    const { data, error } = await supabase.functions.invoke('reset-user-password', {
+        body: payload,
+    });
+
+    if (error) {
+        console.error('Error resetting password:', error);
         throw new Error(error.message);
     }
     return data;
