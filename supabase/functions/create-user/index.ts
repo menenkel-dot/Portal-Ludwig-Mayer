@@ -6,13 +6,16 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, GET, OPTIONS, PUT, DELETE',
 };
 
+// Diese Funktion kann nur von einem authentifizierten Admin aufgerufen werden.
+// Sie listet alle Benutzer aus Supabase Auth auf.
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
 
   try {
-    const { email, password, permissions, department } = await req.json();
+    const { email, password, permissions, department, role } = await req.json();
 
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -25,7 +28,7 @@ Deno.serve(async (req) => {
       email_confirm: true,
       app_metadata: {
         permissions: permissions,
-        role: 'user',
+        role: role || 'user', // Rolle aus Payload übernehmen, sonst 'user'
         department: department,
       },
     });
