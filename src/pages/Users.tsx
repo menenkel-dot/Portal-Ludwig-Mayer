@@ -52,19 +52,24 @@ const Users = () => {
   });
 
   const handleFormSubmit = (data: any) => {
+    const role = data.isAdmin ? 'admin' : 'user';
+    const permissions = data.isAdmin ? [] : data.permissions; // Admin role implies all permissions, so we send an empty array or the actual list
+
     if (selectedUser) {
       const payload: UpdateUserPayload = {
         userId: selectedUser.id,
-        permissions: data.permissions,
+        permissions: permissions,
         department: data.department,
+        role: role,
       };
       updateMutation.mutate(payload);
     } else {
       const payload: NewUserPayload = {
         email: data.email,
         password: data.password,
-        permissions: data.permissions,
+        permissions: permissions,
         department: data.department,
+        role: role,
       };
       createMutation.mutate(payload);
     }

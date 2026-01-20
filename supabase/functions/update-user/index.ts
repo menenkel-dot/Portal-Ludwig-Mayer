@@ -12,7 +12,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { userId, permissions, department } = await req.json();
+    const { userId, permissions, department, role } = await req.json();
 
     if (!userId) {
       throw new Error('User ID is required.');
@@ -23,13 +23,26 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
+    // Fetch current user metadata to merge, ensuring we don't overwrite existing fields unintentionally
+    const { data: existingUser, error: fetchError } = await supabaseAdmin.auth.admin.getUserById(userId);
+    
+    if (fetchError) {
+        throw fetchError;
+    }
+
+    const currentMetadata = existingUser.user.app_metadata || {};
+
+    const newMetadata = {
+        ...currentMetadata,
+        permissions: permissions,
+        department: department,
+        role: role || currentMetadata.role || 'user', // Set role, default to existing or 'user'
+    };
+
     const { data: { user }, error } = await supabaseAdmin.auth.admin.updateUserById(
       userId,
       {
-        app_metadata: {
-          permissions: permissions,
-          department: department,
-        }
+        app_metadata: newMetadata
       }
     );
 

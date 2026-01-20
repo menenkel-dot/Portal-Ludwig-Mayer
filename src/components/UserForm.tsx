@@ -39,10 +39,9 @@ const departments = ["Geschäftsführung", "Verwaltung", "Kalkulation", "Bauleit
 const formSchema = z.object({
   email: z.string().email("Ungültige E-Mail-Adresse."),
   password: z.string().min(8, "Passwort muss mindestens 8 Zeichen haben.").optional().or(z.literal('')),
-  permissions: z.array(z.string()).refine((value) => value.some((item) => item), {
-    message: "Sie müssen mindestens eine Berechtigung auswählen.",
-  }),
+  permissions: z.array(z.string()).optional(),
   department: z.string().optional(),
+  isAdmin: z.boolean().optional(),
 });
 
 interface UserFormProps {
@@ -62,8 +61,11 @@ export const UserForm = ({ onSubmit, initialData, onCancel, isLoading }: UserFor
       password: "",
       permissions: initialData?.app_metadata.permissions || [],
       department: initialData?.app_metadata.department || "",
+      isAdmin: initialData?.app_metadata.role === 'admin',
     },
   });
+
+  const isAdmin = form.watch('isAdmin');
 
   useEffect(() => {
     form.reset({
@@ -71,12 +73,22 @@ export const UserForm = ({ onSubmit, initialData, onCancel, isLoading }: UserFor
       password: "",
       permissions: initialData?.app_metadata.permissions || [],
       department: initialData?.app_metadata.department || "",
+      isAdmin: initialData?.app_metadata.role === 'admin',
     });
   }, [initialData, form]);
 
+  const handleValidSubmit = (data: z.infer<typeof formSchema>) => {
+    const payload = {
+      ...data,
+      role: data.isAdmin ? 'admin' : 'user',
+      permissions: data.isAdmin ? permissionsList.map(p => p.id) : data.permissions || [],
+    };
+    onSubmit(payload);
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(handleValidSubmit)} className="space-y-4">
         <FormField
           control={form.control}
           name="email"
@@ -125,13 +137,30 @@ export const UserForm = ({ onSubmit, initialData, onCancel, isLoading }: UserFor
         />
         <FormField
           control={form.control}
+          name="isAdmin"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-lg border p-3 shadow-sm">
+              <FormControl>
+                <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+              </FormControl>
+              <div className="space-y-1 leading-none">
+                <FormLabel>Administrator-Zugriff</FormLabel>
+                <FormDescription>
+                  Gewährt vollen Zugriff auf alle Bereiche der Anwendung.
+                </FormDescription>
+              </div>
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
           name="permissions"
           render={() => (
             <FormItem>
               <div className="mb-4">
                 <FormLabel className="text-base">Berechtigungen</FormLabel>
                 <FormDescription>
-                  Wählen Sie die Seiten aus, auf die der Benutzer zugreifen darf.
+                  Wählen Sie die Seiten aus, auf die der Benutzer zugreifen darf. (Ignoriert, wenn Administrator-Zugriff aktiv ist)
                 </FormDescription>
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -144,7 +173,8 @@ export const UserForm = ({ onSubmit, initialData, onCancel, isLoading }: UserFor
                       <FormItem key={item.id} className="flex flex-row items-start space-x-3 space-y-0">
                         <FormControl>
                           <Checkbox
-                            checked={field.value?.includes(item.id)}
+                            disabled={isAdmin}
+                            checked={isAdmin || field.value?.includes(item.id)}
                             onCheckedChange={(checked) => {
                               return checked
                                 ? field.onChange([...field.value, item.id])

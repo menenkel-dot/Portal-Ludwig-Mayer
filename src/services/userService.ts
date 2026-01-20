@@ -6,12 +6,14 @@ export type NewUserPayload = {
   password?: string;
   permissions: string[];
   department?: string;
+  role?: 'admin' | 'user';
 };
 
 export type UpdateUserPayload = {
     userId: string;
     permissions: string[];
     department?: string;
+    role?: 'admin' | 'user';
 }
 
 export const getUsers = async (): Promise<AppUser[]> => {
