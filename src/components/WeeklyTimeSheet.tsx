@@ -94,11 +94,14 @@ export const WeeklyTimeSheet = () => {
   };
 
   const handleSave = async () => {
-    if (!selectedSiteId) return;
+    if (!selectedSiteId || !employees) return;
 
-    const entriesToSave: { employee_id: string, site_id: string, date: string, hours_worked: number, existing_ids: string[] }[] = [];
+    const entriesToSave: { employee_id: string, site_id: string, date: string, hours_worked: number, hourly_rate: number, existing_ids: string[] }[] = [];
 
     Object.entries(hoursState).forEach(([employeeId, dayEntries]) => {
+      const employee = employees.find(e => e.id === employeeId);
+      const currentRate = employee?.hourly_rate || 0;
+
       Object.entries(dayEntries).forEach(([date, { hours: hourString, existingIds }]) => {
         const hourValue = parseFloat(hourString.replace(',', '.') || '0');
         
@@ -109,6 +112,7 @@ export const WeeklyTimeSheet = () => {
                 site_id: selectedSiteId,
                 date: date,
                 hours_worked: hourValue,
+                hourly_rate: currentRate, // Hier fixieren wir den Lohn
                 existing_ids: existingIds,
             });
         }

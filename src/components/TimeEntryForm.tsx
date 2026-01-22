@@ -28,6 +28,7 @@ const formSchema = z.object({
   site_id: z.string().optional().nullable(),
   date: z.string().min(1, "Datum ist erforderlich."),
   hours_worked: z.coerce.number().positive("Stunden müssen eine positive Zahl sein."),
+  hourly_rate: z.coerce.number().optional(), // Snapshot des Lohns
   description: z.string().optional(),
   entry_type: z.enum(["Arbeit", "Urlaub", "Schlechtwetter"]),
 }).refine(data => {
@@ -57,17 +58,28 @@ export const TimeEntryForm = ({ onSubmit, initialData, employees, sites, onCance
       site_id: initialData?.site_id || "",
       date: initialData?.date ? new Date(initialData.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
       hours_worked: initialData?.hours_worked || 0,
+      hourly_rate: initialData?.hourly_rate || 0,
       description: initialData?.description || "",
       entry_type: initialData?.entry_type || "Arbeit",
     },
   });
 
   const entryType = form.watch("entry_type");
+  const employeeId = form.watch("employee_id");
+
+  // Wenn der Mitarbeiter geändert wird, aktualisiere den Snapshot-Lohn (nur bei neuen Einträgen)
+  React.useEffect(() => {
+    if (!initialData && employeeId) {
+      const selectedEmployee = employees.find(e => e.id === employeeId);
+      if (selectedEmployee) {
+        form.setValue('hourly_rate', selectedEmployee.hourly_rate);
+      }
+    }
+  }, [employeeId, employees, form, initialData]);
 
   React.useEffect(() => {
     if (entryType === 'Urlaub' || entryType === 'Schlechtwetter') {
       form.setValue('site_id', null);
-      // Set hours to 9 if it's a new entry or was 0
       if (!initialData || initialData.hours_worked === 0) {
         form.setValue('hours_worked', 9);
       }
@@ -162,19 +174,34 @@ export const TimeEntryForm = ({ onSubmit, initialData, employees, sites, onCance
             )}
           />
         )}
-        <FormField
-          control={form.control}
-          name="hours_worked"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Stunden</FormLabel>
-              <FormControl>
-                <Input type="number" step="0.25" placeholder="9" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="grid grid-cols-2 gap-4">
+            <FormField
+            control={form.control}
+            name="hours_worked"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Stunden</FormLabel>
+                <FormControl>
+                    <Input type="number" step="0.25" placeholder="9" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            <FormField
+            control={form.control}
+            name="hourly_rate"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Stundensatz (€)</FormLabel>
+                <FormControl>
+                    <Input type="number" step="0.01" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+        </div>
         <FormField
           control={form.control}
           name="description"

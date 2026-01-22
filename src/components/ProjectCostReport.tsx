@@ -28,8 +28,6 @@ const ProjectCostReport = ({ timeEntries, employees }: ProjectCostReportProps) =
   const reportData = useMemo(() => {
     if (!timeEntries || !employees) return [];
 
-    const employeeMap = new Map(employees.map(e => [e.id, { name: `${e.last_name}, ${e.first_name}`, rate: e.hourly_rate }]));
-
     const projects = timeEntries
       .filter(entry => entry.entry_type === 'Arbeit' && entry.site_id)
       .reduce((acc, entry) => {
@@ -44,30 +42,31 @@ const ProjectCostReport = ({ timeEntries, employees }: ProjectCostReportProps) =
         }
 
         const project = acc[siteId];
-        const employeeInfo = employeeMap.get(entry.employee_id);
-
-        if (employeeInfo) {
-          if (!project.employees[entry.employee_id]) {
-            project.employees[entry.employee_id] = {
-              name: employeeInfo.name,
-              rate: employeeInfo.rate,
-              hours: 0,
-            };
-          }
-          project.employees[entry.employee_id].hours += entry.hours_worked;
+        const employeeName = entry.employees ? `${entry.employees.last_name}, ${entry.employees.first_name}` : "Unbekannt";
+        
+        // Wir gruppieren immer noch nach Mitarbeiter, nutzen aber den jeweiligen Snapshot-Lohn des Eintrags
+        if (!project.employees[entry.employee_id]) {
+          project.employees[entry.employee_id] = {
+            name: employeeName,
+            hours: 0,
+            cost: 0,
+          };
         }
+        
+        const hours = entry.hours_worked;
+        const rate = entry.hourly_rate || 0; // Hier nutzen wir den Snapshot-Wert
+        
+        project.employees[entry.employee_id].hours += hours;
+        project.employees[entry.employee_id].cost += (hours * rate);
 
         return acc;
       }, {} as Record<string, any>);
 
     return Object.values(projects).map(project => {
-      const employeeDetails = Object.values(project.employees).map((emp: any) => {
-        const cost = emp.hours * emp.rate;
-        return { ...emp, cost };
-      }).sort((a, b) => a.name.localeCompare(b.name));
+      const employeeDetails = Object.values(project.employees).sort((a: any, b: any) => a.name.localeCompare(b.name));
 
-      const totalHours = employeeDetails.reduce((sum, emp) => sum + emp.hours, 0);
-      const totalCost = employeeDetails.reduce((sum, emp) => sum + emp.cost, 0);
+      const totalHours = employeeDetails.reduce((sum: number, emp: any) => sum + emp.hours, 0);
+      const totalCost = employeeDetails.reduce((sum: number, emp: any) => sum + emp.cost, 0);
 
       return {
         siteName: project.siteName,
@@ -105,7 +104,7 @@ const ProjectCostReport = ({ timeEntries, employees }: ProjectCostReportProps) =
                 <TableRow>
                   <TableHead>Mitarbeiter</TableHead>
                   <TableHead className="text-right">Stunden</TableHead>
-                  <TableHead className="text-right">Stundensatz</TableHead>
+                  <TableHead className="text-right">Durchschn. Stundensatz</TableHead>
                   <TableHead className="text-right">Gesamtkosten</TableHead>
                 </TableRow>
               </TableHeader>
@@ -114,7 +113,9 @@ const ProjectCostReport = ({ timeEntries, employees }: ProjectCostReportProps) =
                   <TableRow key={empIndex}>
                     <TableCell className="font-medium">{emp.name}</TableCell>
                     <TableCell className="text-right">{emp.hours.toFixed(2)}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(emp.rate)}</TableCell>
+                    <TableCell className="text-right">
+                      {emp.hours > 0 ? formatCurrency(emp.cost / emp.hours) : formatCurrency(0)}
+                    </TableCell>
                     <TableCell className="text-right">{formatCurrency(emp.cost)}</TableCell>
                   </TableRow>
                 ))}

@@ -89,7 +89,7 @@ export const deleteTimeEntry = async (id: string) => {
   return true;
 };
 
-export const saveWeeklyTimeEntries = async (entries: { employee_id: string, site_id: string, date: string, hours_worked: number, existing_ids: string[] }[]) => {
+export const saveWeeklyTimeEntries = async (entries: { employee_id: string, site_id: string, date: string, hours_worked: number, hourly_rate: number, existing_ids: string[] }[]) => {
   const entriesToInsert: NewTimeEntry[] = [];
   const entryIdsToDelete: string[] = [];
 
@@ -101,6 +101,7 @@ export const saveWeeklyTimeEntries = async (entries: { employee_id: string, site
         site_id: entry.site_id,
         date: entry.date,
         hours_worked: entry.hours_worked,
+        hourly_rate: entry.hourly_rate,
         entry_type: 'Arbeit',
         description: undefined,
       });
