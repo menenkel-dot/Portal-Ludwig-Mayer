@@ -45,6 +45,11 @@ export const WeeklyTimeSheet = () => {
     enabled: !!selectedSiteId,
   });
 
+  // Filter sites to only show those "In Arbeit"
+  const activeSites = useMemo(() => {
+    return sites?.filter(site => site.status === 'In Arbeit') || [];
+  }, [sites]);
+
   useEffect(() => {
     if (timeEntries) {
       const newHoursState: HoursState = {};
@@ -151,7 +156,7 @@ export const WeeklyTimeSheet = () => {
               <SelectValue placeholder="1. Baustelle auswählen" />
             </SelectTrigger>
             <SelectContent>
-              {sites?.map(site => <SelectItem key={site.id} value={site.id}>{site.name}</SelectItem>)}
+              {activeSites.map(site => <SelectItem key={site.id} value={site.id}>{site.name}</SelectItem>)}
             </SelectContent>
           </Select>
 
