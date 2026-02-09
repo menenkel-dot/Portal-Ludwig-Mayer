@@ -89,6 +89,16 @@ export const deleteTimeEntry = async (id: string) => {
   return true;
 };
 
+export const deleteTimeEntries = async (ids: string[]) => {
+  const { error } = await supabase.from('time_entries').delete().in('id', ids);
+
+  if (error) {
+    console.error('Error deleting time entries:', error);
+    throw new Error(error.message);
+  }
+  return true;
+};
+
 export const saveWeeklyTimeEntries = async (entries: { employee_id: string, site_id: string, date: string, hours_worked: number, hourly_rate: number, existing_ids: string[] }[]) => {
   const entriesToInsert: NewTimeEntry[] = [];
   const entryIdsToDelete: string[] = [];
