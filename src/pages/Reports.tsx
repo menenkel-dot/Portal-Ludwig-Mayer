@@ -216,39 +216,44 @@ const Reports = () => {
       startY += 8;
       
       const interval = { start: dateRange!.from!, end: dateRange!.to || new Date() };
-      // Mo-Sa einbeziehen (0=So, 6=Sa)
       const daysInRange = eachDayOfInterval(interval).filter(d => getDay(d) !== 0);
       
       const reportData = filteredTimeEntries.reduce((acc, entry) => {
-        const label = entry.entry_type === 'Arbeit' ? (entry.sites?.name || 'Ohne Baustelle') : entry.entry_type;
         const employee = employees?.find(e => e.id === entry.employee_id);
         const empName = employee ? `${employee.last_name}, ${employee.first_name}` : 'Unbekannt';
-        const key = `${empName}-${label}`;
+        const key = entry.employee_id;
         
         if (!acc[key]) {
-          acc[key] = { 
-            name: empName, 
-            type: label, 
-            days: daysInRange.map(() => 0),
-            total: 0,
-            count: 0
+          acc[key] = {
+            name: empName,
+            days: Array.from({ length: daysInRange.length }, () => ({ hours: 0, type: 'Arbeit' })),
+            total: 0
           };
         }
         
         const dayIdx = daysInRange.findIndex(d => isSameDay(d, new Date(entry.date)));
         if (dayIdx !== -1) {
-          acc[key].days[dayIdx] += entry.hours_worked;
+          acc[key].days[dayIdx].hours += entry.hours_worked;
+          if (entry.entry_type !== 'Arbeit') {
+            acc[key].days[dayIdx].type = entry.entry_type;
+          }
           acc[key].total += entry.hours_worked;
         }
         return acc;
       }, {} as Record<string, any>);
 
       const tableData = Object.values(reportData).sort((a: any, b: any) => a.name.localeCompare(b.name)).map((row: any) => {
-        const daysCount = row.days.filter((h: number) => h > 0).length;
+        const daysCount = row.days.filter((d: any) => d.hours > 0).length;
         return [
           row.name,
-          row.type,
-          ...row.days.map((h: number) => formatHours(h)),
+          ...row.days.map((d: any) => {
+            if (d.hours === 0) return "";
+            let val = formatHours(d.hours);
+            if (d.type === 'Krank') val += " K";
+            if (d.type === 'Urlaub') val += " U";
+            if (d.type === 'Schlechtwetter') val += " SW";
+            return val;
+          }),
           formatCurrency(row.total),
           daysCount
         ];
@@ -258,16 +263,15 @@ const Reports = () => {
 
       autoTable(doc, {
         startY: startY,
-        head: [['Mitarbeiter', 'Projekt / Typ', ...dayHeaders, 'Summe', 'Tage']],
+        head: [['Mitarbeiter', ...dayHeaders, 'Summe', 'Tage']],
         body: tableData,
         theme: 'grid',
         headStyles: { fillColor: [241, 245, 249], textColor: [71, 85, 105], fontSize: 8, halign: 'center' },
         styles: { fontSize: 8 },
         columnStyles: {
           0: { fontStyle: 'bold', halign: 'left' },
-          1: { halign: 'left' },
-          [dayHeaders.length + 2]: { fontStyle: 'bold', halign: 'right' },
-          [dayHeaders.length + 3]: { halign: 'right' }
+          [dayHeaders.length + 1]: { fontStyle: 'bold', halign: 'right' },
+          [dayHeaders.length + 2]: { halign: 'right' }
         }
       });
     } else if (activeTab === "project_cost") {

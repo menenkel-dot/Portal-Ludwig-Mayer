@@ -58,58 +58,51 @@ const WeeklyEmployeeReport = ({
       return entryDate >= weekInterval.start && entryDate <= weekInterval.end;
     });
 
-    const dataByGroup = entriesInWeek.reduce((acc, entry) => {
-      let groupingCriteria: string;
-      if (entry.entry_type === "Arbeit") {
-        groupingCriteria = entry.sites?.name || "Ohne Baustelle";
-      } else {
-        groupingCriteria = entry.entry_type;
-      }
+    const dataByEmployee = entriesInWeek.reduce((acc, entry) => {
+      const empId = entry.employee_id;
 
-      const groupKey = `${entry.employee_id}-${groupingCriteria}`;
-
-      if (!acc[groupKey]) {
-        const employee = employees.find((e) => e.id === entry.employee_id);
-        acc[groupKey] = {
+      if (!acc[empId]) {
+        const employee = employees.find((e) => e.id === empId);
+        acc[empId] = {
           employeeName: employee
             ? `${employee.last_name}, ${employee.first_name}`
             : "Unbekannt",
-          groupLabel: groupingCriteria,
-          days: Array(7).fill(0),
+          days: Array.from({ length: 7 }, () => ({ hours: 0, type: "Arbeit" as TimeEntry["entry_type"] })),
         };
       }
 
       const dayIndex = (getDay(new Date(entry.date)) + 6) % 7; // Monday is 0
-      acc[groupKey].days[dayIndex] += entry.hours_worked;
+      
+      // We prioritize Krank/Urlaub over Arbeit for the display if multiple entries exist
+      const currentDay = acc[empId].days[dayIndex];
+      const newHours = currentDay.hours + entry.hours_worked;
+      const newType = (entry.entry_type !== "Arbeit") ? entry.entry_type : currentDay.type;
+
+      acc[empId].days[dayIndex] = {
+        hours: newHours,
+        type: newType
+      };
 
       return acc;
     }, {} as Record<string, any>);
 
-    return Object.values(dataByGroup)
-      .map((groupData) => {
-        const totalHours = groupData.days.reduce(
-          (sum: number, hours: number) => sum + hours,
+    return Object.values(dataByEmployee)
+      .map((empData: any) => {
+        const totalHours = empData.days.reduce(
+          (sum: number, day: any) => sum + day.hours,
           0
         );
-        const totalDays = groupData.days.filter(
-          (hours: number) => hours > 0
+        const totalDays = empData.days.filter(
+          (day: any) => day.hours > 0
         ).length;
         return {
-          ...groupData,
+          ...empData,
           totalHours,
           totalDays,
         };
       })
-      .sort((a, b) => {
-        if (a.employeeName < b.employeeName) return -1;
-        if (a.employeeName > b.employeeName) return 1;
-        if (a.groupLabel < b.groupLabel) return -1;
-        if (a.groupLabel > b.groupLabel) return 1;
-        return 0;
-      });
+      .sort((a, b) => a.employeeName.localeCompare(b.employeeName));
   }, [timeEntries, employees, weekInterval]);
-
-  let lastEmployeeName = "";
 
   return (
     <Card>
@@ -148,8 +141,7 @@ const WeeklyEmployeeReport = ({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[200px]">Mitarbeiter</TableHead>
-              <TableHead className="w-[150px]">Projekt / Typ</TableHead>
+              <TableHead className="w-[250px]">Mitarbeiter</TableHead>
               {weekDays.map((day) => (
                 <TableHead key={day.toISOString()} className="text-center">
                   {format(day, "E", { locale: de })}
@@ -164,28 +156,26 @@ const WeeklyEmployeeReport = ({
           <TableBody>
             {weeklyReportData.length > 0 ? (
               weeklyReportData.map((rowData, i) => {
-                const showEmployeeName = rowData.employeeName !== lastEmployeeName;
-                lastEmployeeName = rowData.employeeName;
                 return (
                   <TableRow key={i}>
                     <TableCell className="font-medium">
-                      {showEmployeeName ? rowData.employeeName : ""}
+                      {rowData.employeeName}
                     </TableCell>
-                    <TableCell className={cn(
-                      rowData.groupLabel === 'Krank' && "text-red-600 font-medium",
-                      rowData.groupLabel === 'Urlaub' && "text-green-600 font-medium",
-                      rowData.groupLabel === 'Schlechtwetter' && "text-blue-600 font-medium"
-                    )}>
-                      {rowData.groupLabel}
-                    </TableCell>
-                    {rowData.days.map((hours: number, dayIndex: number) => (
+                    {rowData.days.map((day: any, dayIndex: number) => (
                       <TableCell key={dayIndex} className={cn(
                         "text-center",
-                        rowData.groupLabel === 'Krank' && hours > 0 && "bg-red-50 text-red-700",
-                        rowData.groupLabel === 'Urlaub' && hours > 0 && "bg-green-50 text-green-700",
-                        rowData.groupLabel === 'Schlechtwetter' && hours > 0 && "bg-blue-50 text-blue-700"
+                        day.type === 'Krank' && day.hours > 0 && "text-red-600 font-medium",
+                        day.type === 'Urlaub' && day.hours > 0 && "text-green-600 font-medium",
+                        day.type === 'Schlechtwetter' && day.hours > 0 && "text-blue-600 font-medium"
                       )}>
-                        {hours > 0 ? hours.toLocaleString('de-DE', { minimumFractionDigits: 2 }) : ""}
+                        {day.hours > 0 ? (
+                          <>
+                            {day.hours.toLocaleString('de-DE', { minimumFractionDigits: 2 })}
+                            {day.type === 'Krank' && " K"}
+                            {day.type === 'Urlaub' && " U"}
+                            {day.type === 'Schlechtwetter' && " SW"}
+                          </>
+                        ) : ""}
                       </TableCell>
                     ))}
                     <TableCell className="text-right font-bold">

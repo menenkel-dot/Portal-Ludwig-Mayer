@@ -147,6 +147,26 @@ export const WeeklyTimeSheet = () => {
     });
   };
 
+  const toggleSchlechtwetter = (employeeId: string, date: string) => {
+    setHoursState(prev => {
+      const current = prev[employeeId]?.[date];
+      const isSW = current?.type === 'Schlechtwetter';
+      
+      return {
+        ...prev,
+        [employeeId]: {
+          ...prev[employeeId],
+          [date]: {
+            ...current,
+            type: isSW ? 'Arbeit' : 'Schlechtwetter',
+            hours: isSW ? '' : '9',
+            siteId: isSW ? (selectedSiteId === "absences" ? null : selectedSiteId) : null
+          },
+        },
+      };
+    });
+  };
+
   const toggleWeekType = (employeeId: string, type: TimeEntry['entry_type']) => {
     setHoursState(prev => {
       const newEmployeeState = { ...prev[employeeId] };
@@ -367,14 +387,23 @@ export const WeeklyTimeSheet = () => {
                                       onChange={e => handleHourChange(empId, dateStr, e.target.value)}
                                       disabled={isUrlaub || isSchlechtwetter}
                                     />
-                                    <Button 
-                                      variant={isKrank ? "destructive" : "outline"} 
-                                      size="icon" 
+                                    <Button
+                                      variant={isKrank ? "destructive" : "outline"}
+                                      size="icon"
                                       className="h-8 w-8 shrink-0"
                                       onClick={() => toggleKrank(empId, dateStr)}
                                       title="Krank melden"
                                     >
                                       <Stethoscope className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      variant={isSchlechtwetter ? "secondary" : "outline"}
+                                      size="icon"
+                                      className="h-8 w-8 shrink-0 text-blue-600 border-blue-200"
+                                      onClick={() => toggleSchlechtwetter(empId, dateStr)}
+                                      title="Schlechtwetter melden"
+                                    >
+                                      <Umbrella className="h-4 w-4" />
                                     </Button>
                                   </div>
                                   {isUrlaub && <span className="text-[10px] text-center text-green-600 font-medium">Urlaub</span>}
