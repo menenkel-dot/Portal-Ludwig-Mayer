@@ -112,16 +112,31 @@ const Reports = () => {
 
   const hoursPerEmployee = useMemo(() => {
     if (!filteredTimeEntries || !employees) return [];
-    const employeeHours = filteredTimeEntries.reduce((acc, entry) => {
-      const empId = entry.employee_id;
-      if (!acc[empId]) acc[empId] = 0;
-      acc[empId] += entry.hours_worked;
+    
+    const employeeStats = employees.reduce((acc, emp) => {
+      acc[emp.id] = {
+        name: `${emp.last_name}, ${emp.first_name}`,
+        Arbeit: 0,
+        Urlaub: 0,
+        Krank: 0,
+        Schlechtwetter: 0,
+        Gesamt: 0
+      };
       return acc;
-    }, {} as Record<string, number>);
-    return employees.map(emp => ({
-      name: `${emp.last_name}, ${emp.first_name}`,
-      Stunden: parseFloat((employeeHours[emp.id] || 0).toFixed(2)),
-    })).sort((a, b) => b.Stunden - a.Stunden);
+    }, {} as Record<string, any>);
+
+    filteredTimeEntries.forEach(entry => {
+      const empId = entry.employee_id;
+      if (employeeStats[empId]) {
+        const type = entry.entry_type as keyof typeof employeeStats[string];
+        if (type in employeeStats[empId]) {
+          employeeStats[empId][type] += entry.hours_worked;
+        }
+        employeeStats[empId].Gesamt += entry.hours_worked;
+      }
+    });
+
+    return Object.values(employeeStats).sort((a: any, b: any) => b.Gesamt - a.Gesamt);
   }, [filteredTimeEntries, employees]);
 
   const projectHourComparison = useMemo(() => {
@@ -153,6 +168,7 @@ const Reports = () => {
     const doc = new jsPDF(isLandscape ? 'l' : 'p', 'mm', 'a4');
     const dateStr = dateRange?.from ? `${format(dateRange.from, 'dd.MM.yyyy')} - ${dateRange.to ? format(dateRange.to, 'dd.MM.yyyy') : 'Heute'}` : '';
     const formatHours = (h: number) => h > 0 ? h.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "";
+    const formatCurrency = (n: number) => new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
 
     doc.setFontSize(18);
     doc.text("Bericht - Ludwig Mayer Bau GmbH", 14, 20);
@@ -200,8 +216,8 @@ const Reports = () => {
       startY += 8;
       
       const interval = { start: dateRange!.from!, end: dateRange!.to || new Date() };
-      // Nur Arbeitstage (Mo-Fr) einbeziehen
-      const daysInRange = eachDayOfInterval(interval).filter(d => getDay(d) !== 0 && getDay(d) !== 6);
+      // Mo-Sa einbeziehen (0=So, 6=Sa)
+      const daysInRange = eachDayOfInterval(interval).filter(d => getDay(d) !== 0);
       
       const reportData = filteredTimeEntries.reduce((acc, entry) => {
         const label = entry.entry_type === 'Arbeit' ? (entry.sites?.name || 'Ohne Baustelle') : entry.entry_type;
@@ -233,7 +249,7 @@ const Reports = () => {
           row.name,
           row.type,
           ...row.days.map((h: number) => formatHours(h)),
-          row.total.toLocaleString('de-DE', { minimumFractionDigits: 2 }),
+          formatCurrency(row.total),
           daysCount
         ];
       });
@@ -260,8 +276,8 @@ const Reports = () => {
       startY += 10;
       
       const interval = { start: dateRange!.from!, end: dateRange!.to || new Date() };
-      // Nur Arbeitstage (Mo-Fr) einbeziehen
-      const daysInRange = eachDayOfInterval(interval).filter(d => getDay(d) !== 0 && getDay(d) !== 6);
+      // Mo-Sa einbeziehen
+      const daysInRange = eachDayOfInterval(interval).filter(d => getDay(d) !== 0);
       const dayHeaders = daysInRange.map(d => `${format(d, 'EE', { locale: de })}\n${format(d, 'dd.MM')}`);
 
       const siteGroups = filteredTimeEntries
@@ -301,13 +317,13 @@ const Reports = () => {
         const tableBody = Object.values(site.employees).sort((a: any, b: any) => a.name.localeCompare(b.name)).map((emp: any) => [
           emp.name,
           ...emp.days.map((h: number) => formatHours(h)),
-          emp.totalHours.toLocaleString('de-DE', { minimumFractionDigits: 2 }),
-          emp.rate.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-          (emp.totalHours * emp.rate).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+          formatCurrency(emp.totalHours),
+          formatCurrency(emp.rate),
+          formatCurrency(emp.totalHours * emp.rate)
         ]);
 
-        const totalHours = Object.values(site.employees).reduce((sum: number, emp: any) => sum + emp.totalHours, 0);
-        const totalCost = Object.values(site.employees).reduce((sum: number, emp: any) => sum + (emp.totalHours * emp.rate), 0);
+        const totalHours = Object.values(site.employees).reduce((sum: number, emp: any) => sum + emp.totalHours, 0) as number;
+        const totalCost = Object.values(site.employees).reduce((sum: number, emp: any) => sum + (emp.totalHours * emp.rate), 0) as number;
 
         autoTable(doc, {
           startY: startY,
@@ -316,7 +332,7 @@ const Reports = () => {
           theme: 'grid',
           headStyles: { fillColor: [241, 245, 249], textColor: [71, 85, 105], fontSize: 8, halign: 'center' },
           styles: { fontSize: 8 },
-          foot: [['', ...daysInRange.map(() => ''), 'Std. / Kosten :', totalHours.toLocaleString('de-DE', { minimumFractionDigits: 2 }), '', totalCost.toLocaleString('de-DE', { minimumFractionDigits: 2 })]],
+          foot: [['', ...daysInRange.map(() => ''), 'Std. / Kosten :', formatCurrency(totalHours), '', formatCurrency(totalCost)]],
           footStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'right' },
           columnStyles: {
             0: { halign: 'left' },
@@ -403,21 +419,45 @@ const Reports = () => {
           <Card>
             <CardHeader>
               <CardTitle>Mitarbeiter-Auslastung</CardTitle>
-              <CardDescription>Gesamtzahl der von jedem Mitarbeiter erfassten Stunden im ausgewählten Zeitraum.</CardDescription>
+              <CardDescription>Detaillierte Aufschlüsselung der erfassten Stunden pro Mitarbeiter im ausgewählten Zeitraum.</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-8">
+              <div className="h-[400px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={hoursPerEmployee} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                    <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}h`} />
+                    <Tooltip cursor={{ fill: 'rgba(241, 245, 249, 0.5)' }} contentStyle={{ background: "white", border: "1px solid #e2e8f0", borderRadius: "0.5rem" }} />
+                    <Legend />
+                    <Bar dataKey="Arbeit" stackId="a" fill="#3b82f6" radius={[0, 0, 0, 0]} />
+                    <Bar dataKey="Urlaub" stackId="a" fill="#22c55e" radius={[0, 0, 0, 0]} />
+                    <Bar dataKey="Krank" stackId="a" fill="#ef4444" radius={[0, 0, 0, 0]} />
+                    <Bar dataKey="Schlechtwetter" stackId="a" fill="#3b82f6" opacity={0.5} radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Mitarbeiter</TableHead>
-                    <TableHead className="text-right">Gesamtstunden</TableHead>
+                    <TableHead className="text-right">Arbeit</TableHead>
+                    <TableHead className="text-right">Urlaub</TableHead>
+                    <TableHead className="text-right">Krank</TableHead>
+                    <TableHead className="text-right">Schlechtwetter</TableHead>
+                    <TableHead className="text-right font-bold">Gesamt</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {hoursPerEmployee.map((emp) => (
+                  {hoursPerEmployee.map((emp: any) => (
                     <TableRow key={emp.name}>
                       <TableCell className="font-medium">{emp.name}</TableCell>
-                      <TableCell className="text-right">{emp.Stunden.toFixed(2)} h</TableCell>
+                      <TableCell className="text-right">{emp.Arbeit.toFixed(2)} h</TableCell>
+                      <TableCell className="text-right text-green-600">{emp.Urlaub.toFixed(2)} h</TableCell>
+                      <TableCell className="text-right text-red-600">{emp.Krank.toFixed(2)} h</TableCell>
+                      <TableCell className="text-right text-blue-600">{emp.Schlechtwetter.toFixed(2)} h</TableCell>
+                      <TableCell className="text-right font-bold">{emp.Gesamt.toFixed(2)} h</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

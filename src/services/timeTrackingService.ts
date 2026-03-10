@@ -49,6 +49,23 @@ export const getTimeEntriesForSiteAndWeek = async (siteId: string, weekStartDate
   return data || [];
 };
 
+export const getTimeEntriesForEmployeesAndWeek = async (employeeIds: string[], weekStartDate: Date): Promise<TimeEntry[]> => {
+  const start = startOfWeek(weekStartDate, { weekStartsOn: 1 });
+  const end = endOfWeek(weekStartDate, { weekStartsOn: 1 });
+
+  const { data, error } = await supabase
+    .from('time_entries')
+    .select('*, sites(id, name)')
+    .in('employee_id', employeeIds)
+    .gte('date', formatISO(start, { representation: 'date' }))
+    .lte('date', formatISO(end, { representation: 'date' }));
+
+  if (error) {
+    console.error('Error fetching time entries for employees and week:', error);
+    throw new Error(error.message);
+  }
+  return data || [];
+};
 
 export const createTimeEntry = async (entryData: NewTimeEntry) => {
   const { data, error } = await supabase
@@ -99,7 +116,7 @@ export const deleteTimeEntries = async (ids: string[]) => {
   return true;
 };
 
-export const saveWeeklyTimeEntries = async (entries: { employee_id: string, site_id: string, date: string, hours_worked: number, hourly_rate: number, existing_ids: string[] }[]) => {
+export const saveWeeklyTimeEntries = async (entries: { employee_id: string, site_id: string | null, date: string, hours_worked: number, hourly_rate: number, entry_type?: TimeEntry['entry_type'], existing_ids: string[] }[]) => {
   const entriesToInsert: NewTimeEntry[] = [];
   const entryIdsToDelete: string[] = [];
 
@@ -112,7 +129,7 @@ export const saveWeeklyTimeEntries = async (entries: { employee_id: string, site
         date: entry.date,
         hours_worked: entry.hours_worked,
         hourly_rate: entry.hourly_rate,
-        entry_type: 'Arbeit',
+        entry_type: entry.entry_type || 'Arbeit',
         description: undefined,
       });
     }

@@ -27,6 +27,7 @@ import {
   getDay,
 } from "date-fns";
 import { de } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 interface WeeklyEmployeeReportProps {
   timeEntries: TimeEntry[];
@@ -170,9 +171,20 @@ const WeeklyEmployeeReport = ({
                     <TableCell className="font-medium">
                       {showEmployeeName ? rowData.employeeName : ""}
                     </TableCell>
-                    <TableCell>{rowData.groupLabel}</TableCell>
+                    <TableCell className={cn(
+                      rowData.groupLabel === 'Krank' && "text-red-600 font-medium",
+                      rowData.groupLabel === 'Urlaub' && "text-green-600 font-medium",
+                      rowData.groupLabel === 'Schlechtwetter' && "text-blue-600 font-medium"
+                    )}>
+                      {rowData.groupLabel}
+                    </TableCell>
                     {rowData.days.map((hours: number, dayIndex: number) => (
-                      <TableCell key={dayIndex} className="text-center">
+                      <TableCell key={dayIndex} className={cn(
+                        "text-center",
+                        rowData.groupLabel === 'Krank' && hours > 0 && "bg-red-50 text-red-700",
+                        rowData.groupLabel === 'Urlaub' && hours > 0 && "bg-green-50 text-green-700",
+                        rowData.groupLabel === 'Schlechtwetter' && hours > 0 && "bg-blue-50 text-blue-700"
+                      )}>
                         {hours > 0 ? hours.toLocaleString('de-DE', { minimumFractionDigits: 2 }) : ""}
                       </TableCell>
                     ))}

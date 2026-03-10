@@ -72,7 +72,7 @@ export type TimeEntry = {
   hourly_rate: number; // Snapshot des Lohns zum Zeitpunkt der Erfassung
   description?: string;
   created_at: string;
-  entry_type: 'Arbeit' | 'Urlaub' | 'Schlechtwetter';
+  entry_type: 'Arbeit' | 'Urlaub' | 'Schlechtwetter' | 'Krank';
   employees: { id: string; first_name: string; last_name: string } | null;
   sites: { id: string; name: string } | null;
 };

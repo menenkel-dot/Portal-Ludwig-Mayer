@@ -30,7 +30,7 @@ const formSchema = z.object({
   hours_worked: z.coerce.number().positive("Stunden müssen eine positive Zahl sein."),
   hourly_rate: z.coerce.number().optional(), // Snapshot des Lohns
   description: z.string().optional(),
-  entry_type: z.enum(["Arbeit", "Urlaub", "Schlechtwetter"]),
+  entry_type: z.enum(["Arbeit", "Urlaub", "Schlechtwetter", "Krank"]),
 }).refine(data => {
     if (data.entry_type === 'Arbeit') {
         return !!data.site_id;
@@ -78,7 +78,7 @@ export const TimeEntryForm = ({ onSubmit, initialData, employees, sites, onCance
   }, [employeeId, employees, form, initialData]);
 
   React.useEffect(() => {
-    if (entryType === 'Urlaub' || entryType === 'Schlechtwetter') {
+    if (entryType === 'Urlaub' || entryType === 'Schlechtwetter' || entryType === 'Krank') {
       form.setValue('site_id', null);
       if (!initialData || initialData.hours_worked === 0) {
         form.setValue('hours_worked', 9);
@@ -121,6 +121,7 @@ export const TimeEntryForm = ({ onSubmit, initialData, employees, sites, onCance
                     <SelectItem value="Arbeit">Arbeit</SelectItem>
                     <SelectItem value="Urlaub">Urlaub</SelectItem>
                     <SelectItem value="Schlechtwetter">Schlechtwetter</SelectItem>
+                    <SelectItem value="Krank">Krank</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
