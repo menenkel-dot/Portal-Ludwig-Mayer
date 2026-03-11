@@ -174,6 +174,14 @@ const WeeklyEmployeeReport = ({
                             {day.type === 'Krank' && " K"}
                             {day.type === 'Urlaub' && " U"}
                             {day.type === 'Schlechtwetter' && " SW"}
+                            {day.type === 'Feiertag' && " F"}
+                            {day.type === 'Unbezahlter Urlaub' && " UU"}
+                            {day.type === 'Krank Unfall' && " KU"}
+                            {day.type === 'Krank Krankenkasse' && " KK"}
+                            {day.type === 'Fehlt entschuldigt' && " FE"}
+                            {day.type === 'Fehlt unentschuldigt' && " FU"}
+                            {day.type === 'Freier Tag' && " FTG"}
+                            {day.type === 'Kurzarbeitergeld' && " KG"}
                           </>
                         ) : ""}
                       </TableCell>

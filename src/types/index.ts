@@ -72,7 +72,7 @@ export type TimeEntry = {
   hourly_rate: number; // Snapshot des Lohns zum Zeitpunkt der Erfassung
   description?: string;
   created_at: string;
-  entry_type: 'Arbeit' | 'Urlaub' | 'Schlechtwetter' | 'Krank';
+  entry_type: 'Arbeit' | 'Urlaub' | 'Schlechtwetter' | 'Krank' | 'Feiertag' | 'Unbezahlter Urlaub' | 'Krank Unfall' | 'Krank Krankenkasse' | 'Fehlt entschuldigt' | 'Fehlt unentschuldigt' | 'Freier Tag' | 'Kurzarbeitergeld';
   employees: { id: string; first_name: string; last_name: string } | null;
   sites: { id: string; name: string } | null;
 };

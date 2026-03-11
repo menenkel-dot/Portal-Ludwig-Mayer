@@ -17,14 +17,37 @@ import { de } from "date-fns/locale";
 import { showSuccess, showError } from "@/utils/toast";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "./ui/skeleton";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
 
 // Define a type for the internal state structure to hold hours and associated IDs
-type EmployeeDayHours = { 
-  hours: string, 
-  existingIds: string[], 
+type EmployeeDayHours = {
+  hours: string,
+  existingIds: string[],
   type: TimeEntry['entry_type'],
-  siteId: string | null 
+  siteId: string | null
 };
+
+const ABSENCE_TYPES: { type: TimeEntry['entry_type']; label: string; short: string; color: string }[] = [
+  { type: 'Krank', label: 'Krank', short: 'K', color: 'text-red-600' },
+  { type: 'Krank Unfall', label: 'Krank Unfall', short: 'KU', color: 'text-red-600' },
+  { type: 'Krank Krankenkasse', label: 'Krank Krankenkasse', short: 'KK', color: 'text-red-600' },
+  { type: 'Urlaub', label: 'Urlaub', short: 'U', color: 'text-green-600' },
+  { type: 'Unbezahlter Urlaub', label: 'Unbezahlter Urlaub', short: 'UU', color: 'text-green-700' },
+  { type: 'Schlechtwetter', label: 'Schlechtwetter', short: 'SW', color: 'text-blue-600' },
+  { type: 'Feiertag', label: 'Feiertag', short: 'F', color: 'text-orange-600' },
+  { type: 'Fehlt entschuldigt', label: 'Fehlt entschuldigt', short: 'FE', color: 'text-gray-600' },
+  { type: 'Fehlt unentschuldigt', label: 'Fehlt unentschuldigt', short: 'FU', color: 'text-gray-900' },
+  { type: 'Freier Tag', label: 'Freier Tag', short: 'FTG', color: 'text-cyan-600' },
+  { type: 'Kurzarbeitergeld', label: 'Kurzarbeitergeld', short: 'KG', color: 'text-purple-600' },
+];
+
 type HoursState = Record<string, Record<string, EmployeeDayHours>>; // { [employeeId]: { [dateStr]: { hours, existingIds, type, siteId } } }
 
 export const WeeklyTimeSheet = () => {
@@ -127,47 +150,155 @@ export const WeeklyTimeSheet = () => {
     }));
   };
 
-  const toggleKrank = (employeeId: string, date: string) => {
-    setHoursState(prev => {
-      const current = prev[employeeId]?.[date];
-      const isKrank = current?.type === 'Krank';
-      
-      return {
-        ...prev,
-        [employeeId]: {
-          ...prev[employeeId],
-          [date]: {
-            ...current,
-            type: isKrank ? 'Arbeit' : 'Krank',
-            hours: isKrank ? '' : '9',
-            siteId: isKrank ? (selectedSiteId === "absences" ? null : selectedSiteId) : null
-          },
-        },
-      };
-    });
-  };
-
-  const toggleSchlechtwetter = (employeeId: string, date: string) => {
-    setHoursState(prev => {
-      const current = prev[employeeId]?.[date];
-      const isSW = current?.type === 'Schlechtwetter';
-      
-      return {
-        ...prev,
-        [employeeId]: {
-          ...prev[employeeId],
-          [date]: {
-            ...current,
-            type: isSW ? 'Arbeit' : 'Schlechtwetter',
-            hours: isSW ? '' : '9',
-            siteId: isSW ? (selectedSiteId === "absences" ? null : selectedSiteId) : null
-          },
-        },
-      };
-    });
-  };
-
   const toggleWeekType = (employeeId: string, type: TimeEntry['entry_type']) => {
+    setHoursState(prev => {
+      const current = prev[employeeId]?.[date];
+      const isDefault = current?.type === 'Arbeit';
+      
+      return {
+        ...prev,
+        [employeeId]: {
+          ...prev[employeeId],
+          [date]: {
+            ...current,
+            type: isDefault ? type : 'Arbeit',
+            hours: isDefault ? '9' : '',
+            siteId: isDefault ? selectedSiteId : null
+          },
+        },
+      };
+    });
+  };
+
+  const handleInputClick = (employeeId: string, date: string) => {
+    setOpen(true);
+    setSelectedEmployee(employeeId);
+    setSelectedDate(date);
+  };
+
+  const handleDropdownChange = (type: TimeEntry['entry_type']) => {
+    toggleWeekType(selectedEmployee, type);
+    setOpen(false);
+  };
+
+  const absenceTypes = [
+    { value: 'Feiertag', label: 'Feiertag (F)' },
+    { value: 'Urlaub', label: 'Urlaub (U)' },
+    { value: 'Unbezahlter Urlaub', label: 'Unbezahlter Urlaub (UU)' },
+    { value: 'Krank Unfall', label: 'Krank Unfall (KU)' },
+    { value: 'Krank Krankenkasse', label: 'Krank Krankenkasse (KK)' },
+    { value: 'Fehlt entschuldigt', label: 'Fehlt entschuldigt (FE)' },
+    { value: 'Fehlt unentschuldigt', label: 'Fehlt unentschuldigt (FU)' },
+    { value: 'Freier Tag', label: 'Freier Tag (FTG)' },
+    { value: 'Kurzarbeitergeld', label: 'Kurzarbeitergeld (KG)' }
+  ];
+
+  return (
+    <div className="flex flex-col md:flex-row gap-2 md:ml-auto">
+      <Input
+        type=""number
+        step="0.25"
+        className="text-center h-8"
+        value={entry.hours || ''}
+        onChange={e => handleHourChange(empId, dateStr, e.target.value)}
+        disabled={isUrlaub || isSchlechtwetter}
+        onClick={e => handleInputClick(empId, dateStr)}
+      />
+      <Popover open={open} onOpenChange={setOpen}
+        placement=""right
+        className="w-[200px] p-0"
+      >
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            size="icon"
+            className="md:w-[300px] justify-between"
+            disabled={!selectedSiteId}
+          >
+            <Input
+              type="text"
+              placeholder="Abwesenheit auswählen"
+              className="px-2 py-1 border rounded"
+              onChange={e => setSelectedType(e.target.value)}
+              disabled
+            />
+            <ChevronsUpDown className="ml-2 h-4 w--4 shrink0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[200px] p-0">
+          <Command>
+            <CommandInput placeholder="Abwesenheit suchen..." />
+            <CommandList>
+              <CommandEmpty>Keine Abwesenheiten gefunden.</CommandEmpty>
+              <CommandGroup>
+                {absenceTypes.map((type) => (
+                  <CommandItem
+                    key={type.value}
+                    onSelect={() => handleDropdownChange(type.value)}
+                  >
+                    <Check className={cn("mr-2 h-4 w-4", selectedType === type.value ? "opacity-100" : "opacity-0")} />
+                    {type.label}
+                  </CommandItem>
+                )}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+});number"
+        step="0.25"
+        className="text-center h-8"
+        value={entry.hours || ''}
+        onChange={e => handleHourChange(empId, dateStr, e.target.value)}
+        disabled={isUrlaub || isSchlechtwetter}
+        onClick={e => handleInputClick(empId, dateStr)}
+      />
+      <Popover open={open} onOpenChange={setOpen}
+        placement="right"
+        className="w-[200px] p-0"
+      >
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            size="icon"
+            className="md:w-[300px] justify-between"
+            disabled={!selectedSiteId}
+          >
+            <Input
+              type="text"
+              placeholder="Abwesenheit auswählen"
+              className="px-2 py-1 border rounded"
+              onChange={e => setSelectedType(e.target.value)}
+              disabled
+            />
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[200px] p-0">
+          <Command>
+            <CommandInput placeholder="Abwesenheit suchen..." />
+            <CommandList>
+              <CommandEmpty>Keine Abwesenheiten gefunden.</CommandEmpty>
+              <CommandGroup>
+                {absenceTypes.map((type) => (
+                  <CommandItem
+                    key={type.value}
+                    onSelect={() => handleDropdownChange(type.value)}
+                  >
+                    <Check className={cn("mr-2 h-4 w-4", selectedType === type.value ? "opacity-100" : "opacity-0")} />
+                    {type.label}
+                  </CommandItem>
+                )}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+});
     setHoursState(prev => {
       const newEmployeeState = { ...prev[employeeId] };
       

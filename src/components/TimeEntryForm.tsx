@@ -30,7 +30,20 @@ const formSchema = z.object({
   hours_worked: z.coerce.number().positive("Stunden müssen eine positive Zahl sein."),
   hourly_rate: z.coerce.number().optional(), // Snapshot des Lohns
   description: z.string().optional(),
-  entry_type: z.enum(["Arbeit", "Urlaub", "Schlechtwetter", "Krank"]),
+  entry_type: z.enum([
+    "Arbeit",
+    "Urlaub",
+    "Schlechtwetter",
+    "Krank",
+    "Feiertag",
+    "Unbezahlter Urlaub",
+    "Krank Unfall",
+    "Krank Krankenkasse",
+    "Fehlt entschuldigt",
+    "Fehlt unentschuldigt",
+    "Freier Tag",
+    "Kurzarbeitergeld"
+  ]),
 }).refine(data => {
     if (data.entry_type === 'Arbeit') {
         return !!data.site_id;
