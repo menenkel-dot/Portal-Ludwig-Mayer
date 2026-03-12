@@ -239,7 +239,8 @@ export const WeeklyTimeSheet = () => {
                     <Check className={cn("mr-2 h-4 w-4", selectedType === type.value ? "opacity-100" : "opacity-0")} />
                     {type.label}
                   </CommandItem>
-                )}
+                )
+                }
               </CommandGroup>
             </CommandList>
           </Command>
