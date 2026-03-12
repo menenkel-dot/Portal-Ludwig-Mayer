@@ -194,6 +194,20 @@ export const RegieReportForm = ({ siteId, reportId, weekNumber, year, employees,
     doc.setFont('helvetica', 'bold');
     doc.text(`Betrag Netto gesamt: ${formatCurrency(totalAmount)}`, 14, startY);
 
+    // Add page numbers
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(10);
+      doc.setTextColor(100);
+      doc.text(
+        `Seite ${i} von ${pageCount}`, 
+        doc.internal.pageSize.getWidth() / 2, 
+        doc.internal.pageSize.getHeight() - 10, 
+        { align: 'center' }
+      );
+    }
+
     doc.save(`Regiebericht_KW${report!.week_number}_${site!.name.replace(/\s/g, '_')}.pdf`);
   };
 
@@ -247,7 +261,7 @@ export const RegieReportForm = ({ siteId, reportId, weekNumber, year, employees,
           </Card>
 
           <Card className="mt-6">
-            <CardHeader><CardTitle className="text-base">Ausgeführte Arbeiten</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base">Ausgeführte Arbeiten</CardHeader>
             <CardContent className="space-y-2">
               {workFields.map((field, index) => (
                 <div key={field.id} className="flex items-center gap-2">
