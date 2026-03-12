@@ -56,7 +56,7 @@ const ProjectCostReport = ({ timeEntries, employees }: ProjectCostReportProps) =
 
     const projects = timeEntries
       .reduce((acc, entry) => {
-        // Wir ignorieren Einträge ohne Baustelle in diesem speziellen Report
+        // Wir ignorieren Einträge ohne Baustelle
         if (!entry.site_id) return acc;
         
         const siteId = entry.site_id;
@@ -86,14 +86,17 @@ const ProjectCostReport = ({ timeEntries, employees }: ProjectCostReportProps) =
         const dayIdx = weekDays.findIndex(d => isSameDay(d, new Date(entry.date)));
         
         if (dayIdx !== -1) {
+          // In der Tagesansicht zeigen wir die Stunden (auch wenn es Abwesenheit ist)
           empRecord.days[dayIdx].hours += entry.hours_worked;
           const abbr = typeAbbreviations[entry.entry_type];
           if (abbr) empRecord.days[dayIdx].abbreviations.add(abbr);
         }
         
-        // Kosten immer auf Basis der Stunden und des Snapshot-Lohns
-        empRecord.totalHours += entry.hours_worked;
-        empRecord.totalCost += (entry.hours_worked * (entry.hourly_rate || 0));
+        // NUR 'Arbeit' fließt in die Summen und Kosten ein
+        if (entry.entry_type === 'Arbeit') {
+          empRecord.totalHours += entry.hours_worked;
+          empRecord.totalCost += (entry.hours_worked * (entry.hourly_rate || 0));
+        }
 
         return acc;
       }, {} as Record<string, any>);
