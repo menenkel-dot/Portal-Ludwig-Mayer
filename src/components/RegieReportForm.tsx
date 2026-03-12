@@ -261,7 +261,7 @@ export const RegieReportForm = ({ siteId, reportId, weekNumber, year, employees,
           </Card>
 
           <Card className="mt-6">
-            <CardHeader><CardTitle className="text-base">Ausgeführte Arbeiten</CardHeader>
+            <CardHeader><CardTitle className="text-base">Ausgeführte Arbeiten</CardTitle></CardHeader>
             <CardContent className="space-y-2">
               {workFields.map((field, index) => (
                 <div key={field.id} className="flex items-center gap-2">
