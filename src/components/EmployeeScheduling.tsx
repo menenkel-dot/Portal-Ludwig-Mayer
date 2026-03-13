@@ -23,7 +23,8 @@ type GridState = Record<string, Record<number, string | null>>; // { [rowKey]: {
 
 export const EmployeeScheduling = () => {
   const queryClient = useQueryClient();
-  const [currentDate, setCurrentDate] = useState(new Date());
+  // Standardmäßig die Vorwoche anzeigen
+  const [currentDate, setCurrentDate] = useState(subWeeks(startOfWeek(new Date(), { weekStartsOn: 1 }), 1));
   const [gridState, setGridState] = useState<GridState>({});
   const [initialGridState, setInitialGridState] = useState<GridState>({});
 

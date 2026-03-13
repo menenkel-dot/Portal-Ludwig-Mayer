@@ -38,7 +38,7 @@ const WeeklyEmployeeReport = ({
   timeEntries,
   employees,
 }: WeeklyEmployeeReportProps) => {
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const [currentDate, setCurrentDate] = useState(subWeeks(startOfWeek(new Date(), { weekStartsOn: 1 }), 1));
 
   const weekInterval = useMemo(() => {
     const start = startOfWeek(currentDate, { weekStartsOn: 1 });

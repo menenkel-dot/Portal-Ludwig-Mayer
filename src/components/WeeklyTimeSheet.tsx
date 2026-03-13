@@ -51,7 +51,7 @@ const timeEntryTypes = [
 
 export const WeeklyTimeSheet = () => {
   const queryClient = useQueryClient();
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const [currentDate, setCurrentDate] = useState(subWeeks(startOfWeek(new Date(), { weekStartsOn: 1 }), 1));
   const [selectedSiteId, setSelectedSiteId] = useState<string | null>(null);
   const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<string[]>([]);
   const [hoursState, setHoursState] = useState<HoursState>({});
