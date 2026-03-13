@@ -19,18 +19,19 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ChevronLeft, ChevronRight, Check, ChevronsUpDown, UserPlus, MoreVertical } from "lucide-react";
-import { startOfWeek, addWeeks, subWeeks, format, eachDayOfInterval } from "date-fns";
+import { ChevronLeft, ChevronRight, Check, ChevronsUpDown, UserPlus, MoreVertical, Info } from "lucide-react";
+import { startOfWeek, addWeeks, subWeeks, format } from "date-fns";
 import { de } from "date-fns/locale";
 import { showSuccess, showError } from "@/utils/toast";
 import { cn } from "@/lib/utils";
-import { Skeleton } from "./ui/skeleton";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 type EmployeeDayHours = { 
   hours: string, 
   existingIds: string[], 
   type: TimeEntry['entry_type'],
-  siteId: string | null 
+  siteId: string | null,
+  otherEntries?: { siteName: string, hours: number }[]
 };
 type HoursState = Record<string, Record<string, EmployeeDayHours>>;
 
@@ -74,7 +75,7 @@ export const WeeklyTimeSheet = () => {
     enabled: selectedEmployeeIds.length > 0,
   });
 
-  const activeSites = useMemo(() => sites?.filter(site => site.status === 'In Arbeit') || [], [sites]);
+  const activeSites = useMemo(() => sites?.filter(site => site.status === 'In Arbeit' || site.status === 'Geplant') || [], [sites]);
 
   useEffect(() => {
     if (timeEntries) {
@@ -85,31 +86,27 @@ export const WeeklyTimeSheet = () => {
           const dateStr = format(day, 'yyyy-MM-dd');
           const entriesForDay = timeEntries.filter(e => e.employee_id === empId && e.date.startsWith(dateStr));
           
-          const siteEntry = entriesForDay.find(e => e.site_id === selectedSiteId && e.entry_type === 'Arbeit');
-          const specialEntry = entriesForDay.find(e => e.entry_type !== 'Arbeit');
-          
-          if (specialEntry) {
-            newHoursState[empId][dateStr] = {
-              hours: String(specialEntry.hours_worked),
-              existingIds: entriesForDay.map(e => e.id),
-              type: specialEntry.entry_type,
-              siteId: specialEntry.site_id || null
-            };
-          } else if (siteEntry) {
-            newHoursState[empId][dateStr] = {
-              hours: String(siteEntry.hours_worked),
-              existingIds: entriesForDay.map(e => e.id),
-              type: 'Arbeit',
-              siteId: selectedSiteId
-            };
+          let currentEntry: TimeEntry | undefined;
+          if (selectedSiteId === "absences") {
+            currentEntry = entriesForDay.find(e => e.entry_type !== 'Arbeit');
           } else {
-            newHoursState[empId][dateStr] = {
-              hours: '',
-              existingIds: entriesForDay.map(e => e.id),
-              type: 'Arbeit',
-              siteId: selectedSiteId === "absences" ? null : selectedSiteId
-            };
+            currentEntry = entriesForDay.find(e => e.site_id === selectedSiteId && e.entry_type === 'Arbeit');
           }
+
+          const otherEntries = entriesForDay
+            .filter(e => e.id !== currentEntry?.id)
+            .map(e => ({
+              siteName: e.sites?.name || (e.entry_type !== 'Arbeit' ? e.entry_type : 'Unbekannt'),
+              hours: e.hours_worked
+            }));
+          
+          newHoursState[empId][dateStr] = {
+            hours: currentEntry ? String(currentEntry.hours_worked) : '',
+            existingIds: currentEntry ? [currentEntry.id] : [],
+            type: currentEntry ? currentEntry.entry_type : 'Arbeit',
+            siteId: selectedSiteId === "absences" ? (currentEntry?.site_id || null) : selectedSiteId,
+            otherEntries: otherEntries.length > 0 ? otherEntries : undefined
+          };
         });
       });
       setHoursState(newHoursState);
@@ -183,6 +180,7 @@ export const WeeklyTimeSheet = () => {
 
       Object.entries(dayEntries).forEach(([date, { hours, existingIds, type, siteId }]) => {
         const hourValue = parseFloat(hours.replace(',', '.') || '0');
+        // Wir speichern nur, wenn Stunden > 0 sind ODER wenn wir einen bestehenden Eintrag löschen müssen (Stunden auf 0 gesetzt)
         if (hourValue > 0 || existingIds.length > 0) {
           entriesToSave.push({
             employee_id: employeeId,
@@ -307,12 +305,14 @@ export const WeeklyTimeSheet = () => {
                           const ds = format(day, 'yyyy-MM-dd');
                           const e = hoursState[empId]?.[ds];
                           const typeLabel = timeEntryTypes.find(t => t.value === e?.type)?.label.split(' (')[0] || e?.type;
+                          const hasOtherEntries = e?.otherEntries && e.otherEntries.length > 0;
+                          
                           return (
-                            <TableCell key={ds} className={cn(e?.type !== 'Arbeit' && "bg-muted/30")}>
+                            <TableCell key={ds} className={cn(e?.type !== 'Arbeit' && "bg-muted/30", "relative")}>
                               <div className="flex flex-col gap-1">
                                 <div className="flex items-center gap-1">
                                   <Input 
-                                    className="h-8 text-center" 
+                                    className={cn("h-8 text-center", hasOtherEntries && "border-blue-400")} 
                                     value={e?.hours || ''} 
                                     onChange={ev => handleHourChange(empId, ds, ev.target.value)} 
                                   />
@@ -331,11 +331,28 @@ export const WeeklyTimeSheet = () => {
                                     </DropdownMenuContent>
                                   </DropdownMenu>
                                 </div>
-                                {e?.type !== 'Arbeit' && (
-                                  <span className="text-[10px] text-center text-muted-foreground font-semibold truncate">
-                                    {typeLabel}
-                                  </span>
-                                )}
+                                <div className="flex items-center justify-center gap-1 min-h-[14px]">
+                                  {e?.type !== 'Arbeit' && (
+                                    <span className="text-[10px] text-center text-muted-foreground font-semibold truncate">
+                                      {typeLabel}
+                                    </span>
+                                  )}
+                                  {hasOtherEntries && (
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <div className="cursor-help">
+                                          <Info className="h-3 w-3 text-blue-500" />
+                                        </div>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p className="text-xs font-semibold mb-1">Bereits verbucht auf:</p>
+                                        {e.otherEntries?.map((oe, i) => (
+                                          <p key={i} className="text-[10px]">{oe.siteName}: {oe.hours}h</p>
+                                        ))}
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  )}
+                                </div>
                               </div>
                             </TableCell>
                           );
@@ -362,3 +379,13 @@ export const WeeklyTimeSheet = () => {
     </Card>
   );
 };
+
+function eachDayOfInterval({ start, end }: { start: Date, end: Date }) {
+  const days = [];
+  let current = new Date(start);
+  while (current <= end) {
+    days.push(new Date(current));
+    current.setDate(current.getDate() + 1);
+  }
+  return days;
+}
