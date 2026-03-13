@@ -1,3 +1,5 @@
+"use client";
+
 import * as React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -54,6 +56,21 @@ const formSchema = z.object({
     path: ["site_id"],
 });
 
+const timeEntryTypes = [
+  { value: "Arbeit", label: "Arbeit" },
+  { value: "Urlaub", label: "Urlaub (U)" },
+  { value: "Schlechtwetter", label: "Schlechtwetter (SW)" },
+  { value: "Krank", label: "Krank (K)" },
+  { value: "Feiertag", label: "Feiertag (F)" },
+  { value: "Unbezahlter Urlaub", label: "Unbezahlter Urlaub (UU)" },
+  { value: "Krank Unfall", label: "Krank Unfall (KU)" },
+  { value: "Krank Krankenkasse", label: "Krank Krankenkasse (KK)" },
+  { value: "Fehlt entschuldigt", label: "Fehlt entschuldigt (FE)" },
+  { value: "Fehlt unentschuldigt", label: "Fehlt unentschuldigt (FU)" },
+  { value: "Freier Tag", label: "Freier Tag (FTG)" },
+  { value: "Kurzarbeitergeld", label: "Kurzarbeitergeld (KG)" }
+];
+
 interface TimeEntryFormProps {
   onSubmit: (data: NewTimeEntry) => void;
   initialData?: TimeEntry | null;
@@ -91,7 +108,7 @@ export const TimeEntryForm = ({ onSubmit, initialData, employees, sites, onCance
   }, [employeeId, employees, form, initialData]);
 
   React.useEffect(() => {
-    if (entryType === 'Urlaub' || entryType === 'Schlechtwetter' || entryType === 'Krank') {
+    if (entryType !== 'Arbeit') {
       form.setValue('site_id', null);
       if (!initialData || initialData.hours_worked === 0) {
         form.setValue('hours_worked', 9);
@@ -131,10 +148,11 @@ export const TimeEntryForm = ({ onSubmit, initialData, employees, sites, onCance
                     <SelectTrigger><SelectValue /></SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="Arbeit">Arbeit</SelectItem>
-                    <SelectItem value="Urlaub">Urlaub</SelectItem>
-                    <SelectItem value="Schlechtwetter">Schlechtwetter</SelectItem>
-                    <SelectItem value="Krank">Krank</SelectItem>
+                    {timeEntryTypes.map(type => (
+                      <SelectItem key={type.value} value={type.value}>
+                        {type.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <FormMessage />

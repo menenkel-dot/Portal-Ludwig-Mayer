@@ -1,3 +1,5 @@
+"use client";
+
 import { useQuery } from "@tanstack/react-query";
 import { getTimeEntries } from "@/services/timeTrackingService";
 import { getEmployees } from "@/services/employeeService";
@@ -29,6 +31,21 @@ import WeeklyEmployeeReport from "@/components/WeeklyEmployeeReport";
 import ProjectCostReport from "@/components/ProjectCostReport";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+
+const typeAbbreviations: Record<string, string> = {
+  "Arbeit": "",
+  "Krank": "K",
+  "Urlaub": "U",
+  "Unbezahlter Urlaub": "UU",
+  "Krank Unfall": "KU",
+  "Krank Krankenkasse": "KK",
+  "Feiertag": "F",
+  "Fehlt entschuldigt": "FE",
+  "Fehlt unentschuldigt": "FU",
+  "Freier Tag": "FTG",
+  "Schlechtwetter": "SW",
+  "Kurzarbeitergeld": "KG"
+};
 
 const RenderThresholdLines = (props: any) => {
   const { data, xAxis, yAxis } = props;
@@ -168,7 +185,7 @@ const Reports = () => {
     const doc = new jsPDF(isLandscape ? 'l' : 'p', 'mm', 'a4');
     const dateStr = dateRange?.from ? `${format(dateRange.from, 'dd.MM.yyyy')} - ${dateRange.to ? format(dateRange.to, 'dd.MM.yyyy') : 'Heute'}` : '';
     const formatHours = (h: number) => h > 0 ? h.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "";
-    const formatCurrency = (n: number) => new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+    const formatCurrency = (n: number) => new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(n);
 
     doc.setFontSize(18);
     doc.text("Bericht - Ludwig Mayer Bau GmbH", 14, 20);
@@ -249,12 +266,11 @@ const Reports = () => {
           ...row.days.map((d: any) => {
             if (d.hours === 0) return "";
             let val = formatHours(d.hours);
-            if (d.type === 'Krank') val += " K";
-            if (d.type === 'Urlaub') val += " U";
-            if (d.type === 'Schlechtwetter') val += " SW";
+            const abbr = typeAbbreviations[d.type];
+            if (abbr) val += ` ${abbr}`;
             return val;
           }),
-          formatCurrency(row.total),
+          formatHours(row.total),
           daysCount
         ];
       });
@@ -285,7 +301,7 @@ const Reports = () => {
       const dayHeaders = daysInRange.map(d => `${format(d, 'EE', { locale: de })}\n${format(d, 'dd.MM')}`);
 
       const siteGroups = filteredTimeEntries
-        .filter(e => e.entry_type === 'Arbeit' && e.site_id)
+        .filter(e => e.site_id)
         .reduce((acc, entry) => {
           const siteId = entry.site_id!;
           const siteName = entry.sites?.name || 'Unbekannt';
@@ -296,15 +312,24 @@ const Reports = () => {
             if (!acc[siteId].employees[employee.id]) {
               acc[siteId].employees[employee.id] = {
                 name: `${employee.last_name}, ${employee.first_name}`,
-                rate: employee.hourly_rate,
-                days: daysInRange.map(() => 0),
-                totalHours: 0
+                rate: entry.hourly_rate || employee.hourly_rate,
+                days: daysInRange.map(() => ({ hours: 0, abbr: "" })),
+                totalHours: 0,
+                totalCost: 0
               };
             }
             const dayIdx = daysInRange.findIndex(d => isSameDay(d, new Date(entry.date)));
             if (dayIdx !== -1) {
-              acc[siteId].employees[employee.id].days[dayIdx] += entry.hours_worked;
-              acc[siteId].employees[employee.id].totalHours += entry.hours_worked;
+              const empRec = acc[siteId].employees[employee.id];
+              empRec.days[dayIdx].hours += entry.hours_worked;
+              const abbr = typeAbbreviations[entry.entry_type];
+              if (abbr) empRec.days[dayIdx].abbr = abbr;
+              
+              // NUR 'Arbeit' fließt in die Summen und Kosten ein
+              if (entry.entry_type === 'Arbeit') {
+                empRec.totalHours += entry.hours_worked;
+                empRec.totalCost += (entry.hours_worked * empRec.rate);
+              }
             }
           }
           return acc;
@@ -320,14 +345,18 @@ const Reports = () => {
 
         const tableBody = Object.values(site.employees).sort((a: any, b: any) => a.name.localeCompare(b.name)).map((emp: any) => [
           emp.name,
-          ...emp.days.map((h: number) => formatHours(h)),
-          formatCurrency(emp.totalHours),
+          ...emp.days.map((d: any) => {
+            let val = formatHours(d.hours);
+            if (d.abbr) val += ` ${d.abbr}`;
+            return val;
+          }),
+          formatHours(emp.totalHours),
           formatCurrency(emp.rate),
-          formatCurrency(emp.totalHours * emp.rate)
+          formatCurrency(emp.totalCost)
         ]);
 
         const totalHours = Object.values(site.employees).reduce((sum: number, emp: any) => sum + emp.totalHours, 0) as number;
-        const totalCost = Object.values(site.employees).reduce((sum: number, emp: any) => sum + (emp.totalHours * emp.rate), 0) as number;
+        const totalCost = Object.values(site.employees).reduce((sum: number, emp: any) => sum + emp.totalCost, 0) as number;
 
         autoTable(doc, {
           startY: startY,
@@ -336,7 +365,7 @@ const Reports = () => {
           theme: 'grid',
           headStyles: { fillColor: [241, 245, 249], textColor: [71, 85, 105], fontSize: 8, halign: 'center' },
           styles: { fontSize: 8 },
-          foot: [['', ...daysInRange.map(() => ''), 'Std. / Kosten :', formatCurrency(totalHours), '', formatCurrency(totalCost)]],
+          foot: [['', ...daysInRange.map(() => ''), 'Std. / Kosten :', formatHours(totalHours), '', formatCurrency(totalCost)]],
           footStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'right' },
           columnStyles: {
             0: { halign: 'left' },
