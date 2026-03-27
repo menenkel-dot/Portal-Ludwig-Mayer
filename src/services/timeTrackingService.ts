@@ -5,11 +5,13 @@ import { startOfWeek, endOfWeek, formatISO } from 'date-fns';
 export type NewTimeEntry = Omit<TimeEntry, 'id' | 'created_at' | 'employees' | 'sites'>;
 
 export const getTimeEntries = async (): Promise<TimeEntry[]> => {
+  // Wir erhöhen das Limit massiv, um sicherzustellen, dass bei großen Datenmengen nichts fehlt.
+  // Falls die Datenbank mehr als 10.000 Einträge hat, müsste man auf echtes Server-Side Pagination umstellen.
   const { data, error } = await supabase
     .from('time_entries')
     .select('*, employees(id, first_name, last_name), sites(id, name)')
     .order('date', { ascending: false })
-    .limit(5000); // Explicitly request more items to avoid default truncation
+    .limit(10000); 
 
   if (error) {
     console.error('Error fetching time entries:', error);
