@@ -23,7 +23,7 @@ type SortConfig = {
   direction: 'ascending' | 'descending';
 } | null;
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 30;
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(amount);
 
