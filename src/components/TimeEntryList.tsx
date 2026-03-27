@@ -19,11 +19,11 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 type SortConfig = {
-  key: keyof TimeEntry;
+  key: keyof TimeEntry | 'employees' | 'sites';
   direction: 'ascending' | 'descending';
 } | null;
 
-const ITEMS_PER_PAGE = 30;
+const ITEMS_PER_PAGE = 100;
 
 const formatCurrency = (amount: number) => new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(amount);
 
@@ -48,10 +48,12 @@ export const TimeEntryList = () => {
       const employeeName = `${entry.employees?.first_name || ''} ${entry.employees?.last_name || ''}`.toLowerCase();
       const siteName = (entry.sites?.name || '').toLowerCase();
       const date = new Date(entry.date).toLocaleDateString().toLowerCase();
+      const type = entry.entry_type.toLowerCase();
 
       return employeeName.includes(lowercasedTerm) ||
              siteName.includes(lowercasedTerm) ||
-             date.includes(lowercasedTerm);
+             date.includes(lowercasedTerm) ||
+             type.includes(lowercasedTerm);
     });
   }, [timeEntries, searchTerm]);
 
@@ -61,14 +63,14 @@ export const TimeEntryList = () => {
       sortableItems.sort((a, b) => {
         let valA, valB;
         if (sortConfig.key === 'employees') {
-          valA = `${a.employees?.last_name} ${a.employees?.first_name}`;
-          valB = `${b.employees?.last_name} ${b.employees?.first_name}`;
+          valA = `${a.employees?.last_name || ''} ${a.employees?.first_name || ''}`;
+          valB = `${b.employees?.last_name || ''} ${b.employees?.first_name || ''}`;
         } else if (sortConfig.key === 'sites') {
           valA = a.sites?.name || '';
           valB = b.sites?.name || '';
         } else {
-          valA = a[sortConfig.key];
-          valB = b[sortConfig.key];
+          valA = a[sortConfig.key as keyof TimeEntry] || '';
+          valB = b[sortConfig.key as keyof TimeEntry] || '';
         }
 
         if (valA < valB) {
@@ -89,7 +91,7 @@ export const TimeEntryList = () => {
     currentPage * ITEMS_PER_PAGE
   );
 
-  const requestSort = (key: keyof TimeEntry) => {
+  const requestSort = (key: keyof TimeEntry | 'employees' | 'sites') => {
     let direction: 'ascending' | 'descending' = 'ascending';
     if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
       direction = 'descending';
@@ -330,7 +332,7 @@ export const TimeEntryList = () => {
 
       <div className="flex items-center justify-between mt-4">
         <div className="text-sm text-muted-foreground">
-          Seite {currentPage} von {totalPages}
+          Einträge {((currentPage - 1) * ITEMS_PER_PAGE) + 1} bis {Math.min(currentPage * ITEMS_PER_PAGE, sortedTimeEntries.length)} von {sortedTimeEntries.length}
         </div>
         <Pagination>
           <PaginationContent>

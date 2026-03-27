@@ -8,7 +8,8 @@ export const getTimeEntries = async (): Promise<TimeEntry[]> => {
   const { data, error } = await supabase
     .from('time_entries')
     .select('*, employees(id, first_name, last_name), sites(id, name)')
-    .order('date', { ascending: false });
+    .order('date', { ascending: false })
+    .limit(5000); // Explicitly request more items to avoid default truncation
 
   if (error) {
     console.error('Error fetching time entries:', error);
