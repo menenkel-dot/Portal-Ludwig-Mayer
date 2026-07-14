@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getEmployees, createEmployee, updateEmployee, deleteEmployee, NewEmployee } from "@/services/employeeService";
 import { Employee } from "@/types";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -182,6 +183,11 @@ export const EmployeeList = () => {
                   Stundensatz <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
               </TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => requestSort('is_active')}>
+                  Status <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
               <TableHead className="text-right">Aktionen</TableHead>
             </TableRow>
           </TableHeader>
@@ -197,6 +203,11 @@ export const EmployeeList = () => {
                   <TableCell>{employee.position}</TableCell>
                   <TableCell>{employee.email}</TableCell>
                   <TableCell>{employee.hourly_rate.toFixed(2)} €</TableCell>
+                  <TableCell>
+                    <Badge variant={employee.is_active ? "default" : "secondary"}>
+                      {employee.is_active ? "Aktiv" : "Inaktiv"}
+                    </Badge>
+                  </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -212,7 +223,7 @@ export const EmployeeList = () => {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center">
+                <TableCell colSpan={6} className="h-24 text-center">
                   Keine Ergebnisse gefunden.
                 </TableCell>
               </TableRow>

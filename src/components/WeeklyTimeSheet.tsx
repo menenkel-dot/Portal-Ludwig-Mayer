@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getSites } from "@/services/siteService";
-import { getEmployees } from "@/services/employeeService";
+import { getActiveEmployees } from "@/services/employeeService";
 import { getTimeEntriesForEmployeesAndWeek, saveWeeklyTimeEntries } from "@/services/timeTrackingService";
 import { Site, Employee, TimeEntry } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -67,7 +67,10 @@ export const WeeklyTimeSheet = () => {
   }, [currentDate]);
 
   const { data: sites, isLoading: isLoadingSites } = useQuery({ queryKey: ["sites"], queryFn: getSites });
-  const { data: employees, isLoading: isLoadingEmployees } = useQuery({ queryKey: ["employees"], queryFn: getEmployees });
+  const { data: employees, isLoading: isLoadingEmployees } = useQuery({
+    queryKey: ["employees", "active"],
+    queryFn: getActiveEmployees,
+  });
   
   const { data: timeEntries, isLoading: isLoadingEntries } = useQuery({
     queryKey: ["weeklyTimeEntries", selectedEmployeeIds, format(weekStart, "yyyy-MM-dd")],

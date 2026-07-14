@@ -58,6 +58,7 @@ export type Employee = {
   email: string;
   phone: string;
   hourly_rate: number;
+  is_active: boolean;
   created_at: string;
   time_entries?: (TimeEntry & { sites: { id: string; name: string } | null })[];
   employee_assignments?: EmployeeAssignment[];

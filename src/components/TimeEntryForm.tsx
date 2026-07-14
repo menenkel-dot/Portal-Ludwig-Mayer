@@ -96,6 +96,12 @@ export const TimeEntryForm = ({ onSubmit, initialData, employees, sites, onCance
 
   const entryType = form.watch("entry_type");
   const employeeId = form.watch("employee_id");
+  const isInactiveEmployee = Boolean(
+    initialData && !employees.some(employee => employee.id === initialData.employee_id)
+  );
+  const inactiveEmployeeName = initialData?.employees
+    ? `${initialData.employees.last_name}, ${initialData.employees.first_name}`
+    : "Unbekannter Mitarbeiter";
 
   // Wenn der Mitarbeiter geändert wird, aktualisiere den Snapshot-Lohn (nur bei neuen Einträgen)
   React.useEffect(() => {
@@ -117,7 +123,9 @@ export const TimeEntryForm = ({ onSubmit, initialData, employees, sites, onCance
   }, [entryType, form, initialData]);
 
   const sortedEmployees = React.useMemo(() => {
-    return [...employees].sort((a, b) => a.last_name.localeCompare(b.last_name));
+    return employees
+      .filter(employee => employee.is_active)
+      .sort((a, b) => a.last_name.localeCompare(b.last_name));
   }, [employees]);
 
   return (
@@ -166,18 +174,29 @@ export const TimeEntryForm = ({ onSubmit, initialData, employees, sites, onCance
           render={({ field }) => (
             <FormItem>
               <FormLabel>Mitarbeiter</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
-                <FormControl>
-                  <SelectTrigger><SelectValue placeholder="Mitarbeiter auswählen" /></SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {sortedEmployees.map((employee) => (
-                    <SelectItem key={employee.id} value={employee.id}>
-                      {employee.last_name}, {employee.first_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {isInactiveEmployee ? (
+                <>
+                  <FormControl>
+                    <Input value={`${inactiveEmployeeName} (inaktiv)`} disabled />
+                  </FormControl>
+                  <p className="text-sm text-muted-foreground">
+                    Die Zuordnung bleibt für diesen bestehenden Eintrag erhalten.
+                  </p>
+                </>
+              ) : (
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger><SelectValue placeholder="Mitarbeiter auswählen" /></SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {sortedEmployees.map((employee) => (
+                      <SelectItem key={employee.id} value={employee.id}>
+                        {employee.last_name}, {employee.first_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
               <FormMessage />
             </FormItem>
           )}

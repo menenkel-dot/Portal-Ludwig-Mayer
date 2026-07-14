@@ -16,6 +16,20 @@ export const getEmployees = async (): Promise<Employee[]> => {
   return data || [];
 };
 
+export const getActiveEmployees = async (): Promise<Employee[]> => {
+  const { data, error } = await supabase
+    .from('employees')
+    .select('*')
+    .eq('is_active', true)
+    .order('last_name', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching active employees:', error);
+    throw new Error(error.message);
+  }
+  return data || [];
+};
+
 export const getEmployeeById = async (id: string): Promise<Employee | null> => {
     const { data, error } = await supabase
     .from('employees')
