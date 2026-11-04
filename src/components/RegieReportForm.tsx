@@ -89,7 +89,29 @@ export const RegieReportForm = ({ siteId, reportId, weekNumber, year, employees,
   }, [report, form]);
 
   const mutation = useMutation({
-    mutationFn: (data: FormData) => updateRegieReport(report!.id, data),
+    mutationFn: (data: FormData) => updateRegieReport(report!.id, {
+      employee_hours: data.employee_hours?.map(item => ({
+        employee_id: item.employee_id,
+        hours: {
+          mon: item.hours.mon ?? null,
+          tue: item.hours.tue ?? null,
+          wed: item.hours.wed ?? null,
+          thu: item.hours.thu ?? null,
+          fri: item.hours.fri ?? null,
+        },
+      })),
+      work_descriptions: data.work_descriptions?.map(item => ({
+        id: item.id,
+        description: item.description,
+      })),
+      materials: data.materials?.map(item => ({
+        id: item.id,
+        unit: item.unit,
+        description: item.description,
+        quantity: item.quantity ?? null,
+        unit_price: item.unit_price ?? null,
+      })),
+    }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["regieReports", siteId] });
       queryClient.invalidateQueries({ queryKey: ["regieReport", report!.id] });
@@ -195,7 +217,7 @@ export const RegieReportForm = ({ siteId, reportId, weekNumber, year, employees,
     doc.text(`Betrag Netto gesamt: ${formatCurrency(totalAmount)}`, 14, startY);
 
     // Add page numbers
-    const pageCount = doc.internal.getNumberOfPages();
+    const pageCount = doc.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
       doc.setFontSize(10);

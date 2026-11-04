@@ -24,6 +24,15 @@ interface ProjectCostReportProps {
   employees: Employee[];
 }
 
+type ProjectEmployee = {
+  name: string;
+  days: { hours: number; abbreviations: Set<string> }[];
+  totalHours: number;
+  totalCost: number;
+};
+
+type ProjectGroup = { siteName: string; employees: Record<string, ProjectEmployee> };
+
 // Mapping der Typen auf Kürzel
 const typeAbbreviations: Record<string, string> = {
   "Arbeit": "",
@@ -99,12 +108,12 @@ const ProjectCostReport = ({ timeEntries, employees }: ProjectCostReportProps) =
         }
 
         return acc;
-      }, {} as Record<string, any>);
+      }, {} as Record<string, ProjectGroup>);
 
     return Object.values(projects).map(project => {
-      const employeeDetails = Object.values(project.employees).sort((a: any, b: any) => a.name.localeCompare(b.name));
-      const totalHours = employeeDetails.reduce((sum: number, emp: any) => sum + emp.totalHours, 0);
-      const totalCost = employeeDetails.reduce((sum: number, emp: any) => sum + emp.totalCost, 0);
+      const employeeDetails = Object.values(project.employees).sort((a, b) => a.name.localeCompare(b.name));
+      const totalHours = employeeDetails.reduce((sum, emp) => sum + emp.totalHours, 0);
+      const totalCost = employeeDetails.reduce((sum, emp) => sum + emp.totalCost, 0);
 
       return {
         siteName: project.siteName,
@@ -157,10 +166,10 @@ const ProjectCostReport = ({ timeEntries, employees }: ProjectCostReportProps) =
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {project.employees.map((emp: any, empIndex: number) => (
+                  {project.employees.map((emp, empIndex) => (
                     <TableRow key={empIndex}>
                       <TableCell className="font-medium">{emp.name}</TableCell>
-                      {emp.days.map((day: any, dIdx: number) => {
+                      {emp.days.map((day, dIdx) => {
                         const hasAbbr = day.abbreviations.size > 0;
                         return (
                           <TableCell key={dIdx} className={cn(

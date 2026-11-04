@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { requireAdmin } from '../_shared/require-admin.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,16 +13,15 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { userId, permissions, department, role } = await req.json();
-
-    if (!userId) {
-      throw new Error('User ID is required.');
-    }
-
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
+    const denied = await requireAdmin(req, supabaseAdmin);
+    if (denied) return new Response(denied.body, { status: denied.status, headers: corsHeaders });
+
+    const { userId, permissions, department, role } = await req.json();
+    if (!userId) throw new Error('User ID is required.');
 
     // Fetch current user metadata to merge, ensuring we don't overwrite existing fields unintentionally
     const { data: existingUser, error: fetchError } = await supabaseAdmin.auth.admin.getUserById(userId);
